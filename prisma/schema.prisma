@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 
@@ -26,11 +25,11 @@ model User{
 
 
 model UserPortfolioPreference {
-    id   Int  @id @default(autoincrement())
-    walletAddress String @unique
-    StablePercentage Int
-   NativePercentage Int
-   OtherPercentage Int
+  id   Int  @id @default(autoincrement())
+  walletAddress String @unique
+  StablePercentage Int
+  NativePercentage Int
+  OtherPercentage Int
 }
 
 model Token{

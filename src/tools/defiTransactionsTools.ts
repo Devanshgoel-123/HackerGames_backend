@@ -6,7 +6,7 @@ import {
 	convertAmountToSmallestUnit,
 	splitUint256,
 	replacePlaceholders,
-	getTokensFromS3,
+	FetchSupportedTokens,
 	extractDefiTokens,
 	fetchTokenPrices,
 	fetchTokenBalance,
@@ -15,11 +15,11 @@ import {
 } from "../utils/defiUtils";
 import fs from 'fs';
 import path from 'path';
-import { ProtocolConfig } from "../../types/defi";
+import { ProtocolConfig } from "../types/defi";
+import { ProtocolConfigObject } from "../config/protocolConfig";
 
 // Load the configuration file
-const configFilePath = path.join(__dirname, '../../config/protocolConfig.json');
-const configData: ProtocolConfig = JSON.parse(fs.readFileSync(configFilePath, 'utf-8'));
+const configData: ProtocolConfig = ProtocolConfigObject;
 
 // Main tool function
 const createTransactionsTool = tool(
@@ -272,7 +272,7 @@ const createTransactionsTool = tool(
 const getWalletBalancesTool = tool(
 	async (input: { walletAddress: string }) => {
 		try {
-			const tokens = await getTokensFromS3();
+			const tokens = await FetchSupportedTokens();
 
 			// Extract DeFi tokens
 			const defiTokens = extractDefiTokens();
@@ -332,6 +332,5 @@ const getWalletBalancesTool = tool(
 	}
 );
 
-// Update exports
 export const defiTransactionsTools = [createTransactionsTool, getWalletBalancesTool];
 

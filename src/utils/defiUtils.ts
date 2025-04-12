@@ -1,28 +1,23 @@
-import { S3Client, GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { Token, TokenMetadata, TokenBalance, ProtocolConfig, ChainData } from '../types/defi';
 import { RpcProvider, Contract } from 'starknet';
 import { LP_ABI, ERC20_ABI, STAKING_ABI } from '../constants/contracts';
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
+import { PrismaClient } from '@prisma/client';
 import { Fraction, Percent } from "@uniswap/sdk-core";
+import { ProtocolConfigObject } from '../config/protocolConfig';
 
-// Load the configuration file
-const configFilePath = path.join(__dirname, '../../config/protocolConfig.json');
-const protocolConfig: ProtocolConfig = JSON.parse(fs.readFileSync(configFilePath, 'utf-8'));
+
+const protocolConfig: ProtocolConfig = ProtocolConfigObject
 const PERCENTAGE_INPUT_PRECISION = 2;
 
 // Load provider 
-if (!process.env.ALCHEMY_API_ENDPOINT || !process.env.ALCHEMY_API_KEY) {
+if (!process.env.ALCHEMY_API_KEY) {
 	throw new Error("Alchemy API configuration is missing");
 }
 
-if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !process.env.AWS_REGION) {
-	throw new Error('Missing required AWS credentials');
-}
-
-const ALCHEMY_API_ENDPOINT = process.env.ALCHEMY_API_ENDPOINT + process.env.ALCHEMY_API_KEY;
-const provider = new RpcProvider({ nodeUrl: ALCHEMY_API_ENDPOINT });
+const provider = new RpcProvider({ nodeUrl: process.env.ALCHEMY_API_KEY });
 
 
 export function convertAmountToSmallestUnit(amount: string, decimals: number): string {
@@ -80,78 +75,23 @@ export function reconstructUint256(low: string | number | bigint, high: string |
 	return (highBigInt << BigInt(128)) + lowBigInt;
 }
 
-const s3Client = new S3Client({
-	region: process.env.AWS_REGION,
-	credentials: {
-		accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-		secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-	},
-	endpoint: process.env.AWS_ENDPOINT
-});
+// const s3Client = new S3Client({
+// 	region: process.env.AWS_REGION,
+// 	credentials: {
+// 		accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+// 		secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+// 	},
+// 	endpoint: process.env.AWS_ENDPOINT
+// });
 
-export async function getTokensFromS3(): Promise<Token[]> {
-	if (!process.env.S3_BUCKET_NAME) {
-		throw new Error('S3_BUCKET_NAME is not defined');
-	}
-
-	try {
-		const command = new GetObjectCommand({
-			Bucket: process.env.S3_BUCKET_NAME,
-			Key: 'tokens.json'
-		});
-
-		const response = await s3Client.send(command);
-		const tokensData = JSON.parse(await response.Body?.transformToString() || '[]');
-		return tokensData;
-	} catch (error) {
-		console.error('Error fetching tokens from S3:', error);
-		return [];
-	}
-}
-
-export async function getYieldsFromS3(): Promise<ChainData[]> {
-	if (!process.env.S3_BUCKET_NAME) {
-		throw new Error('S3_BUCKET_NAME is not defined');
-	}
-
-	try {
-		// List all objects in the yields folder
-		const listCommand = new ListObjectsV2Command({
-			Bucket: process.env.S3_BUCKET_NAME,
-			Prefix: 'yields/'  // This will look for all files under the yields folder
-		});
-
-		const listedObjects = await s3Client.send(listCommand);
-		if (!listedObjects.Contents) {
-			console.warn('No yield files found in S3');
-			return [];
-		}
-
-		// Fetch and parse all JSON files
-		const allYields: ChainData[] = [];
-		for (const object of listedObjects.Contents) {
-			if (!object.Key || !object.Key.endsWith('.json')) continue;
-
-			const getCommand = new GetObjectCommand({
-				Bucket: process.env.S3_BUCKET_NAME,
-				Key: object.Key
-			});
-
-			const response = await s3Client.send(getCommand);
-			const fileData = JSON.parse(await response.Body?.transformToString() || '[]');
-
-			// If fileData is an array, spread it; if it's an object, wrap it
-			if (Array.isArray(fileData)) {
-				allYields.push(...fileData);
-			} else {
-				allYields.push(fileData);
-			}
-		}
-
-		return allYields;
-	} catch (error) {
-		console.error('Error fetching yields from S3:', error);
-		return [];
+export const FetchSupportedTokens=async():Promise<Token[]>=>{
+	try{
+		const prisma = new PrismaClient();
+		const tokens=await prisma.token.findMany();
+		return tokens;
+	}catch(err){
+		console.log("Couldnt fetch the supported tokens")
+		return [] as Token[];
 	}
 }
 
@@ -190,16 +130,15 @@ export function extractDefiTokens(): Set<TokenMetadata> {
 	return defiTokens;
 }
 
-// export function prepareTokensToCheck(tokens: any[], defiTokens: Set<TokenMetadata>): any[] {
-// 	return [
-// 		...tokens,
-// 		...Array.from(defiTokens).map(token => ({
-// 			address: token.address,
-// 			name: token.name,
-// 			symbol: token.symbol
-// 		}))
-// 	];
-// }
+export function prepareTokensToCheck(tokens: any[], defiTokens: Set<TokenMetadata>): any[] {
+	return [
+		...tokens,
+		...Array.from(defiTokens).map(token => ({
+			address: token.address,
+			name: token.name,
+		}))
+	];
+}
 
 export async function fetchTokenPrices(
 	tokensToCheck: any[],
@@ -274,11 +213,9 @@ export async function fetchTokenBalance(
 		const valueUSD = tokenPrice ? (balanceInTokens * tokenPrice).toFixed(2) : null;
 
 		return {
-			// contract_address: token.address,
 			name: token.name,
 			symbol: token.symbol,
 			balance: balanceInTokens.toString(),
-			// decimals: decimals.toString(),
 			valueUSD
 		};
 	} catch (error) {
@@ -371,7 +308,7 @@ export async function getLPTokenPrice(
 		const totalSupply = reconstructUint256(totalSupplyResult.supply[0], totalSupplyResult.supply[1]);
 
 		// get tokens address from getTokensFromS3
-		const tokens = await getTokensFromS3();
+		const tokens = await FetchSupportedTokens()
 		const token0Config = tokens.find((token: any) => token.symbol === underlyingTokens[0]);
 		const token1Config = tokens.find((token: any) => token.symbol === underlyingTokens[1]);
 
@@ -381,10 +318,10 @@ export async function getLPTokenPrice(
 
 		// Get underlying token prices
 		const token0Price = await getTokenPrice(
-			token0Config?.address,
+			token0Config?.token_address,
 		);
 		const token1Price = await getTokenPrice(
-			token1Config?.address
+			token1Config?.token_address
 		);
 
 		// Calculate reserves in USD

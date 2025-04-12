@@ -4,27 +4,24 @@ import { RpcProvider, constants } from "starknet";
 import { Factory, EkuboLaunchData, constants as unruggableConstants } from "@unruggable_starknet/core";
 import { parseFormatedPercentage } from "../utils/defiUtils";
 
-if (!process.env.ALCHEMY_API_ENDPOINT || !process.env.ALCHEMY_API_KEY) {
+if (!process.env.ALCHEMY_API_KEY) {
 	throw new Error("Alchemy API configuration is missing");
 }
 
-const ALCHEMY_API_ENDPOINT = process.env.ALCHEMY_API_ENDPOINT + process.env.ALCHEMY_API_KEY;
-const provider = new RpcProvider({ nodeUrl: ALCHEMY_API_ENDPOINT });
+const provider = new RpcProvider({ nodeUrl: process.env.ALCHEMY_API_KEY });
 
 const chainId = constants.StarknetChainId.SN_MAIN
 const factory = new Factory({ provider, chainId });
+
 const QUOTE_TOKENS_ADDRESS = {
 	ETH: "0x049D36570D4e46f48e99674bd3fcc84644DdD6b96F7C741B1562B82f9e004dC7",
-	STARK:
-		"0x04718f5a0Fc34cC1AF16A1cdee98fFB20C31f5cD61D6Ab07201858f4287c938D",
-	USDC:
-		"0x053C91253BC9682c04929cA02ED00b3E423f6710D2ee7e0D5EBB06F3eCF368A8",
+	STARK:"0x04718f5a0Fc34cC1AF16A1cdee98fFB20C31f5cD61D6Ab07201858f4287c938D",
+	USDC:"0x053C91253BC9682c04929cA02ED00b3E423f6710D2ee7e0D5EBB06F3eCF368A8",
 };
 
 const createMemecoinTool = tool(
 	async ({ owner, name, symbol, initialSupply }) => {
 		try {
-			// Prepare deployment data
 			const data = {
 				owner,
 				name,
@@ -32,7 +29,6 @@ const createMemecoinTool = tool(
 				initialSupply,
 			};
 
-			// Use the SDK's method to get deployment calldata and token address
 			const { tokenAddress, calls } = factory.getDeployCalldata(data);
 
 			// Return the transaction details and token address

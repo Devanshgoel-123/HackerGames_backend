@@ -56,9 +56,12 @@ export interface YieldData {
 
 export interface Token {
 	name: string;
-	symbol: string;
 	decimals: number;
-	address: string;
+	token_address: string;
+	image:string;
+	type:string;
+	chain_id:number;
+
 }
 
 export interface TokenMetadata {

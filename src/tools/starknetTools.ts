@@ -1,7 +1,9 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
-import { getTokensFromS3 } from "../utils/defiUtils";
-import { Token } from "../../types/defi";
+import { FetchSupportedTokens } from "../utils/defiUtils";
+import { Token  } from "../types/defi";
+
+
 interface TokenMarket {
 	currentPrice: number;
 	marketCap: number;
@@ -79,10 +81,10 @@ const getTopStarknetTokensTool = tool(
 
 const getTokenDetailsTool = tool(
 	async ({ symbol, name }: { symbol: string, name: string }) => {
-		const tokens = await getTokensFromS3();
-		let address = tokens.find((token: Token) => token.symbol === symbol)?.address;
+		const tokens = await FetchSupportedTokens();
+		let address = tokens.find((token: Token) => token.name.toLowerCase() === name)?.token_address;
 		if (!address) {
-			address = tokens.find((token: Token) => token.name === name)?.address;
+			address = tokens.find((token: Token) => token.name === name)?.token_address;
 		}
 		try {
 			const response = await fetch(`https://starknet.impulse.avnu.fi/v1/tokens/${address}`);
