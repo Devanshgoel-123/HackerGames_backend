@@ -10,11 +10,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@langchain/core": "^0.3.44",
+    "@prisma/client": "^6.6.0",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "prisma": "^6.6.0"
+    "prisma": "^6.6.0",
+    "starknet-agent-kit": "^0.0.11"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
