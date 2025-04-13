@@ -283,11 +283,13 @@ const getWalletBalancesTool = tool(
 				// defiTokens,
 			);
 
-			const tokensToCheck = tokens.map(token => ({
+			const tokensToCheck = tokens.map((token)=>{
+				return {
 				address: token.token_address,
 				name: token.name,
-			}));
-
+				decimals:token.decimals
+				}
+			})
 			console.log("THe tokens to check are",tokensToCheck)
 			// Fetch all balances of both regular and DeFi tokens
 			const balancesWithUSD = await Promise.all(
@@ -297,12 +299,12 @@ const getWalletBalancesTool = tool(
 			);
 
 			// Filter balances
-			const filteredBalances = filterNonZeroBalances(balancesWithUSD);
+			// const filteredBalances = filterNonZeroBalances(balancesWithUSD);
 
 			return JSON.stringify(
 				{
 					type: "wallet_balances",
-					data: filteredBalances,
+					data: balancesWithUSD,
 					details: {
 						walletAddress: input.walletAddress,
 					}

@@ -12,6 +12,20 @@ export interface ProtocolConfig {
 	};
 }
 
+
+
+
+export interface Portfolio {
+	tokens: TokenForPortfolio[];
+	total_value_usd: number;
+  }
+  
+export interface UserAllocations {
+	stablecoin: number;
+	native: number;
+	other: number;
+  }
+
 export interface ChainData {
 	timestamp: string;
 	chain: string;
@@ -61,7 +75,17 @@ export interface Token {
 	image:string;
 	type:string;
 	chain_id:number;
+}
 
+
+export interface TokenForPortfolio{
+	name:string;
+	valueUsd:string;
+	balance:string;
+	decimals:string;
+	image:string;
+	type:string;
+	address:string;
 }
 
 export interface TokenMetadata {

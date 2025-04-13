@@ -1,8 +1,8 @@
-import { Token, TokenMetadata, TokenBalance, ProtocolConfig, ChainData } from '../types/defi';
-import { RpcProvider, Contract } from 'starknet';
+import { Token, TokenMetadata, TokenBalance, ProtocolConfig, ChainData, TokenForPortfolio } from '../types/defi';
+import { RpcProvider, Contract, Call, constants, Provider } from 'starknet';
 import { LP_ABI, ERC20_ABI, STAKING_ABI } from '../constants/contracts';
 import axios from 'axios';
-import fs from 'fs';
+
 import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import { Fraction, Percent } from "@uniswap/sdk-core";
@@ -17,8 +17,9 @@ if (!process.env.ALCHEMY_API_KEY) {
 	throw new Error("Alchemy API configuration is missing");
 }
 
-const provider = new RpcProvider({ nodeUrl: process.env.ALCHEMY_API_KEY });
-
+const provider = new Provider({
+	nodeUrl:`${process.env.ALCHEMY_API_KEY}`
+});
 
 export function convertAmountToSmallestUnit(amount: string, decimals: number): string {
 	const amountNum = parseFloat(amount);
@@ -145,13 +146,13 @@ export async function fetchTokenPrices(
 	// defiTokens: Set<TokenMetadata>,
 ): Promise<Map<string, number>> {
 	const tokenPrices = new Map<string, number>();
-
+  
 	try {
 		// Fetch regular token prices
 		const regularPricePromises = tokensToCheck.map(async (token: any) => {
 			try {
-				const price = await getTokenPrice(token.address);
-				tokenPrices.set(token.address, price);
+				const price = await getTokenPrice(token.token_address);
+				tokenPrices.set(token.token_address, price);
 			} catch (error) {
 				console.warn(`Failed to fetch price for regular token ${token.address}`);
 			}
@@ -181,54 +182,75 @@ export async function fetchTokenPrices(
 	return tokenPrices;
 }
 
+
+const erc20Abi = [
+	{
+		"inputs": [
+		  {
+			"name": "account",
+			"type": "felt"
+		  }
+		],
+		"name": "balanceOf",
+		"outputs": [
+		  {
+			"name": "balance",
+			"type": "Uint256"
+		  }
+		],
+		"stateMutability": "view",
+		"type": "function"
+	  },
+];
+
+
 export async function fetchTokenBalance(
 	token: any,
 	walletAddress: string,
 	tokenPrices: Map<string, number>,
-): Promise<TokenBalance> {
+): Promise<TokenForPortfolio> {
 	try {
-		const contract = new Contract(ERC20_ABI, token.address, provider);
-
-		const [balanceResult, decimalsResult] = await Promise.all([
-			contract.call("balanceOf", [walletAddress] as const),
-			contract.call("decimals", [] as const)
-		]) as [{ balance: bigint }, { decimals: bigint }];
-
-		const balance = balanceResult.balance;
-		const decimals = Number(decimalsResult.decimals);
-
+		// console.log("the data is",walletAddress,token)
+		const get_abi = provider.getClassAt(token.address);
+		const contract = new Contract((await get_abi).abi, token.address, provider);
+		const balance = await contract.call("balanceOf", [walletAddress]);
+		console.log(balance,token.decimals)
 		if (!balance) {
 			return {
-				// contract_address: token.address,
+				address: token.address,
 				name: token.name,
-				symbol: token.symbol,
 				balance: "0",
-				// decimals: decimals.toString(),
-				valueUSD: "0"
+				decimals: token.decimals.toString(),
+				valueUsd: "0",
+				image: token.image,
+				type : token.type
 			};
 		}
 
-		const balanceInSmallestUnit = balance.toString();
-		const balanceInTokens = Number(balanceInSmallestUnit) / Math.pow(10, decimals);
+		const balanceInSmallestUnit = balance.toString()
+		const balanceInTokens = Number(balanceInSmallestUnit) / 10**token.decimals;
 		const tokenPrice = tokenPrices.get(token.address);
-		const valueUSD = tokenPrice ? (balanceInTokens * tokenPrice).toFixed(2) : null;
-
+		const valueUsd = tokenPrice ? (balanceInTokens * tokenPrice).toFixed(2) : "0.00";
+		console.log(balanceInSmallestUnit,balanceInTokens,tokenPrice,valueUsd)
 		return {
 			name: token.name,
-			symbol: token.symbol,
 			balance: balanceInTokens.toString(),
-			valueUSD
+			valueUsd : valueUsd,
+			decimals : token.decimals,
+			address: token.address,
+			image: token.image,
+			type : token.type
 		};
 	} catch (error) {
 		console.error(`Failed to fetch balance for token ${token.address}:`, error);
 		return {
-			// contract_address: token.address,
+			address: token.address,
 			name: token.name,
-			symbol: token.symbol,
 			balance: "0",
-			// decimals: "0",
-			valueUSD: null,
-			error: "Failed to fetch balance"
+			decimals: token.decimals.toString(),
+			valueUsd: "0",
+			image: token.image,
+			type : token.type
 		};
 	}
 }
@@ -245,8 +267,8 @@ export async function getTokenPrice(
 	try {
 		console.log("The token address is:",tokenAddress)
 		const { data } = await axios.get(`https://starknet.impulse.avnu.fi/v1/tokens/${tokenAddress}/prices/line`);
-		console.log(data)
 		const currentPrice = data[data.length - 1]?.value;
+		console.log("the current price is",currentPrice);
 		if (!currentPrice) {
 			throw new Error(`No price data available for token ${tokenAddress}`);
 		}

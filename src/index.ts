@@ -5,13 +5,13 @@ import bodyParser = require("body-parser");
 import { generateText } from "ai"
 import { anthropic } from "@ai-sdk/anthropic"
 import { chatFunction } from "./Agents/agentService";
-
+import { UserPortfolioRouter } from "./Routes/UserPortfolio";
 dotenv.config()
 const app: Express = express();
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
+app.use("/userPortfolio",UserPortfolioRouter)
 const PORT = process.env.PORT || 3000;
 
 
@@ -69,6 +69,9 @@ app.post("/agent", async (req:Request, res:Response):Promise<any> =>{
         })
     }
 })
+
+
+
 
 app.listen(`${PORT}`, () => {
     console.log(`[server]: Server is running at http://localhost:${PORT}`);
