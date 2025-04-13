@@ -215,6 +215,7 @@ export async function fetchTokenBalance(
 		const get_abi = provider.getClassAt(token.address);
 		const contract = new Contract((await get_abi).abi, token.address, provider);
 		const balance = await contract.call("balanceOf", [walletAddress]);
+		const tokenPrice = tokenPrices.get(token.address);
 		console.log(balance,token.decimals)
 		if (!balance) {
 			return {
@@ -224,13 +225,14 @@ export async function fetchTokenBalance(
 				decimals: token.decimals.toString(),
 				valueUsd: "0",
 				image: token.image,
-				type : token.type
+				type : token.type,
+				priceUsd: tokenPrice?.toString() || "0"
 			};
 		}
 
 		const balanceInSmallestUnit = balance.toString()
 		const balanceInTokens = Number(balanceInSmallestUnit) / 10**token.decimals;
-		const tokenPrice = tokenPrices.get(token.address);
+		
 		const valueUsd = tokenPrice ? (balanceInTokens * tokenPrice).toFixed(2) : "0.00";
 		console.log(balanceInSmallestUnit,balanceInTokens,tokenPrice,valueUsd)
 		return {
@@ -240,7 +242,8 @@ export async function fetchTokenBalance(
 			decimals : token.decimals,
 			address: token.address,
 			image: token.image,
-			type : token.type
+			type : token.type,
+			priceUsd : tokenPrice?.toString() || "0.00"
 		};
 	} catch (error) {
 		console.error(`Failed to fetch balance for token ${token.address}:`, error);
@@ -251,7 +254,8 @@ export async function fetchTokenBalance(
 			decimals: token.decimals.toString(),
 			valueUsd: "0",
 			image: token.image,
-			type : token.type
+			type : token.type,
+			priceUsd:"0.00"
 		};
 	}
 }

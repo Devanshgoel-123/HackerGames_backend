@@ -86,7 +86,15 @@ export interface TokenForPortfolio{
 	image:string;
 	type:string;
 	address:string;
+	priceUsd:string;
 }
+export interface SwapAction {
+	from_token_address: string;
+	to_token_address: string;
+	amount: number;
+	chainId: number;
+	fromTokenDecimals:number;
+  }
 
 export interface TokenMetadata {
 	address: string;

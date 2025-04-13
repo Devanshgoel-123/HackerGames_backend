@@ -7,13 +7,17 @@ import { anthropic } from "@ai-sdk/anthropic"
 import axios from "axios";
 import { chatFunction } from "./Agents/agentService";
 import { UserPortfolioRouter } from "./Routes/UserPortfolio";
+import { RebalancePortfolioRouter } from "./Routes/RebalancingPortfolio";
+import { FetchSupportedTokens } from "./utils/defiUtils";
+import { FetchVolatileTokens } from "./Functions/FetchVolatileTokens";
 dotenv.config()
 const app: Express = express();
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/userPortfolio",UserPortfolioRouter)
-const PORT = process.env.PORT || 3000;
+app.use("/rebalance",RebalancePortfolioRouter)
+const PORT = process.env.PORT || 3002;
 
 
 
@@ -73,55 +77,10 @@ app.post("/agent", async (req:Request, res:Response):Promise<any> =>{
 
 app.get("/volatile", async (req: Request, res: Response) => {
   try {
-    const supportedTokens = [
-      { token_address: "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7" }, // ETH
-      { token_address: "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8" }, // USDC
-      { token_address: "0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8" }, // USDT
-      // Add more tokens as needed
-    ];
-    
-    const formattedTokens = supportedTokens.map((item) => {
-      const chainName = "starknet";
-      return `${chainName}:${item.token_address}`;
-    }).join(",");
-  
-    // Using the correct API domain provided
-    const apiUrl = `https://coins.llama.fi/percentage/${formattedTokens}`;
-    
-    // Extract query parameters from the request
-    const { timestamp, lookForward, period } = req.query;
-
-    // Build query parameters for the API call
-    const queryParams = new URLSearchParams();
-
-    if (timestamp) {
-      queryParams.append("timestamp", timestamp as string);
-    }
-
-    if (lookForward !== undefined) {
-      queryParams.append("lookForward", lookForward as string);
-    }
-
-    if (period) {
-      queryParams.append("period", period as string);
-    }
-
-    // Construct the full URL with query params
-    const queryString = queryParams.toString();
-    const fullApiUrl = `${apiUrl}${queryString ? `?${queryString}` : ''}`;
-    
-    // Make the API call to DeFiLlama
-    const response = await axios.get(fullApiUrl);
-    
-    // Check if the request was successful
-    if (response.status < 200 || response.status >= 300) {
-      throw new Error(`DeFiLlama API error: ${response.status} ${response.statusText}`);
-    }      
-    const data = response.data;
-    console.log("Data from DeFiLlama:", data);
-    
-    // Send the data as the response
-    res.json(data);
+    const result= await FetchVolatileTokens();
+    res.json({
+        data:result?.volatileTokensData
+    });
   } catch (error) {
     console.error("Error in /volatile endpoint:", error);
     res.status(500).json({ 
