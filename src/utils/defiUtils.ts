@@ -7,7 +7,8 @@ import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import { Fraction, Percent } from "@uniswap/sdk-core";
 import { ProtocolConfigObject } from '../config/protocolConfig';
-
+import dotenv from 'dotenv';
+dotenv.config()
 
 const protocolConfig: ProtocolConfig = ProtocolConfigObject
 const PERCENTAGE_INPUT_PRECISION = 2;
