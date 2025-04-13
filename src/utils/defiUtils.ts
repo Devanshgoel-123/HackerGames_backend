@@ -142,7 +142,7 @@ export function prepareTokensToCheck(tokens: any[], defiTokens: Set<TokenMetadat
 
 export async function fetchTokenPrices(
 	tokensToCheck: any[],
-	defiTokens: Set<TokenMetadata>,
+	// defiTokens: Set<TokenMetadata>,
 ): Promise<Map<string, number>> {
 	const tokenPrices = new Map<string, number>();
 
@@ -158,21 +158,22 @@ export async function fetchTokenPrices(
 		});
 
 		// Fetch DeFi token prices
-		const defiPricePromises = Array.from(defiTokens).map(async (token: TokenMetadata) => {
-			try {
-				if (token.type === "pair" && token.asset0 && token.asset1) {
-					const price = await getLPTokenPrice(token.address, "Nostra", [token.asset0, token.asset1]);
-					tokenPrices.set(token.address, price);
-				} else if (token.type === "staking" && token.underlyingAddress) {
-					const price = await getStakedAssetPrice(token.underlyingAddress, token.address);
-					tokenPrices.set(token.address, price);
-				}
-			} catch (error) {
-				console.warn(`Failed to fetch price for DeFi token ${token.address}`);
-			}
-		});
+		// const defiPricePromises = Array.from(defiTokens).map(async (token: TokenMetadata) => {
+		// 	try {
+		// 		if (token.type === "pair" && token.asset0 && token.asset1) {
+		// 			const price = await getLPTokenPrice(token.address, "Nostra", [token.asset0, token.asset1]);
+		// 			tokenPrices.set(token.address, price);
+		// 		} else if (token.type === "staking" && token.underlyingAddress) {
+		// 			const price = await getStakedAssetPrice(token.underlyingAddress, token.address);
+		// 			tokenPrices.set(token.address, price);
+		// 		}
+		// 	} catch (error) {
+		// 		console.warn(`Failed to fetch price for DeFi token ${token.address}`);
+		// 	}
+		// });
 
-		await Promise.all([...regularPricePromises, ...defiPricePromises]);
+		// await Promise.all([...regularPricePromises, ...defiPricePromises]);
+		await Promise.all([...regularPricePromises])
 	} catch (error) {
 		console.error("Failed to fetch token prices:", error);
 	}
@@ -242,7 +243,9 @@ export async function getTokenPrice(
 	tokenAddress: string,
 ): Promise<number> {
 	try {
+		console.log("The token address is:",tokenAddress)
 		const { data } = await axios.get(`https://starknet.impulse.avnu.fi/v1/tokens/${tokenAddress}/prices/line`);
+		console.log(data)
 		const currentPrice = data[data.length - 1]?.value;
 		if (!currentPrice) {
 			throw new Error(`No price data available for token ${tokenAddress}`);

@@ -21,9 +21,6 @@ interface ChatResponse {
 const tools = [
 	// ...defiLlamaTools,
 	...defiTransactionsTools,
-	...starknetTools,
-	...memeTools,
-	memoryTool,
 ];
 
 const llm = new ChatAnthropic({
@@ -57,7 +54,7 @@ export async function chatFunction(
 	}
 ): Promise<ChatResponse>{
 	console.log("Processing chat messages...");
-	const systemMessage = SYSTEM_PROMPT;
+	const systemMessage = SYSTEM_PROMPT.replace("{{address}}", address);
 	const memory = new MemorySaver();
 
 	// Convert the message history to LangChain format
@@ -95,7 +92,6 @@ export async function chatFunction(
 		toolOutputs: [],
 		finalResponse: ""
 	};
-
 	try {
 		for await (const events of await app.stream({
 			messages: formattedMessages

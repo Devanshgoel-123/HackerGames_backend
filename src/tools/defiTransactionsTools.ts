@@ -275,20 +275,20 @@ const getWalletBalancesTool = tool(
 			const tokens = await FetchSupportedTokens();
 
 			// Extract DeFi tokens
-			const defiTokens = extractDefiTokens();
+			// const defiTokens = extractDefiTokens();
 
 			// Fetch all token prices
 			const tokenPrices = await fetchTokenPrices(
 				tokens,
-				defiTokens,
+				// defiTokens,
 			);
 
-			const tokensToCheck = [...tokens, ...Array.from(defiTokens).map(token => ({
-				address: token.address,
+			const tokensToCheck = tokens.map(token => ({
+				address: token.token_address,
 				name: token.name,
-				symbol: token.symbol
-			}))];
+			}));
 
+			console.log("THe tokens to check are",tokensToCheck)
 			// Fetch all balances of both regular and DeFi tokens
 			const balancesWithUSD = await Promise.all(
 				tokensToCheck.map((token: any) =>
