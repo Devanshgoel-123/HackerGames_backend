@@ -1,11 +1,7 @@
 import { ChatAnthropic } from "@langchain/anthropic";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { MemorySaver } from "@langchain/langgraph";
-import { Response } from 'express';
-import { memoryTool } from "../tools/memoryTool";
 import { starknetTools } from "../tools/starknetTools";
-import { defiTransactionsTools } from "../tools/defiTransactionsTools";
-import { memeTools } from "../tools/unruggable";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import dotenv from "dotenv";
 import { SYSTEM_PROMPT } from "./systemPrompt";
@@ -50,7 +46,7 @@ const llm = new ChatAnthropic({
 });
 
 export async function chatFunction(
-	messages: { role: string; content: string }[], // { role :"assistant" , content:"waht is the price of agent"}
+	messages: { role: string; content: string }[],
 	address: string,
 	existingMemory?: {
 		preferences: {
@@ -64,9 +60,10 @@ export async function chatFunction(
 	const systemMessage = SYSTEM_PROMPT.replace("{{address}}", address);
 	const memory = new MemorySaver();
 
-	// Convert the message history to LangChain format
 	const formattedMessages = messages.map(msg => {
+		console.log("The user msg is",msg.content)
 		if (msg.role === 'user') {
+			
 			return new HumanMessage(msg.content);
 		} else if (msg.role === 'assistant') {
 			return new AIMessage(msg.content);
@@ -109,8 +106,10 @@ export async function chatFunction(
 					for (const message of messages) {
 						if (message.content) {
 							if (typeof message.content === "string") {
+								console.log(message.content)
 								response.agentMessages.push(message.content);
 							} else if (Array.isArray(message.content)) {
+								console.log(message.content)
 								const textMessages = message.content.filter((msg: any) => msg.type === "text");
 								const textContent = textMessages.map((msg: any) => msg.text).join("\n");
 								response.agentMessages.push(textContent);
@@ -126,8 +125,10 @@ export async function chatFunction(
 					for (const toolMessage of events.tools.messages) {
 						if (typeof toolMessage.content === "string") {
 							try {
+								console.log(toolMessage.content)
 								response.toolOutputs.push(JSON.parse(toolMessage.content));
 							} catch {
+								console.log(toolMessage.content)
 								response.toolOutputs.push(toolMessage.content);
 							}
 						} else {
@@ -139,7 +140,6 @@ export async function chatFunction(
 				console.error("Error processing chat message:", error);
 			}
 		}
-
 		console.log("The response received from agent is",response)
 		return response;
 	} catch (error) {

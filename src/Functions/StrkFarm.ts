@@ -9,10 +9,10 @@ import { uint256 } from "starknet";
 
 const provider = new RpcProvider({ nodeUrl: process.env.ALCHEMY_API_KEY });
 const STRKFARMCONTRACTS={
-    "usdc":"0x0115e94e722cfc4c77a2f15c4aefb0928c1c0029e5a57570df24c650cb7cec2c",
-    "usdt":"0x00a858c97e9454f407d1bd7c57472fc8d8d8449a777c822b41d18e387816f29c",
-    "strk":"0x07fb5bcb8525954a60fde4e8fb8220477696ce7117ef264775a1770e23571929",
-    "eth":"0x05eaf5ee75231cecf79921ff8ded4b5ffe96be718bcb3daf206690ad1a9ad0ca"
+    "usdt":"0x0115e94e722cfc4c77a2f15c4aefb0928c1c0029e5a57570df24c650cb7cec2c",
+    "usdc":"0x00a858c97e9454f407d1bd7c57472fc8d8d8449a777c822b41d18e387816f29c",
+    "eth":"0x07fb5bcb8525954a60fde4e8fb8220477696ce7117ef264775a1770e23571929",
+    "strk":"0x05eaf5ee75231cecf79921ff8ded4b5ffe96be718bcb3daf206690ad1a9ad0ca"
 }
 
 
@@ -117,9 +117,9 @@ export const DepositFunction = async (tokenName:string, amount:string,accountAdd
     if(contractAddress===""){
         return "We currently dont support this token"
     }
-    const uintAmount = uint256.bnToUint256(amount);
+    const uintAmount = uint256.bnToUint256((Number(amount)*(10**finalToken.decimals)).toString());
     const account = new Account(provider, accountAddress, `${process.env.PRIVATE_KEY}`);
-    console.log
+    console.log(uintAmount)
     const tx = await account.execute([
         {
           contractAddress: contractAddress,

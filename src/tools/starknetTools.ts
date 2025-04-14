@@ -1,6 +1,6 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
-import { FetchSupportedTokens } from "../utils/defiUtils";
+import { FetchSupportedTokens, getTokenPrice } from "../utils/defiUtils";
 import { Token  } from "../types/defi";
 
 
@@ -80,48 +80,31 @@ const getTopStarknetTokensTool = tool(
 );
 
 const getTokenDetailsTool = tool(
-	async ({ symbol, name }: { symbol: string, name: string }) => {
+	async ({name }: { symbol: string, name: string }) => {
 		const tokens = await FetchSupportedTokens();
-		let address = tokens.find((token: Token) => token.name.toLowerCase() === name)?.token_address;
-		if (!address) {
-			address = tokens.find((token: Token) => token.name === name)?.token_address;
+		let Token = tokens.find((token: Token) => token.name.toLowerCase() === name);
+		if (!Token?.chain_id) {
+			Token = tokens.find((token: Token) => token.name.toLowerCase() === name);
 		}
+		console.log("The token address is",name)
 		try {
-			const response = await fetch(`https://starknet.impulse.avnu.fi/v1/tokens/${address}`);
-			if (!response.ok) {
-				throw new Error(`API request failed with status ${response.status}`);
-			}
-
-			const token = await response.json() as AvnuToken;
-
-			// Get price history
-			const priceResponse = await fetch(`https://starknet.impulse.avnu.fi/v1/tokens/${address}/prices/line`);
-			const priceHistory = await priceResponse.json() as Array<{ date: string; value: number }>;
-
-			// Get volume history
-			const volumeResponse = await fetch(`https://starknet.impulse.avnu.fi/v1/tokens/${address}/volumes/line`);
-			const volumeHistory = await volumeResponse.json() as Array<{ date: string; value: number }>;
+			const priceHistory = await getTokenPrice(Token?.token_address as string);
 
 			return JSON.stringify({
 				token: {
-					name: token.name,
-					symbol: token.symbol,
-					address: token.address,
-					verified: token.verified,
-					market: token.market,
-					priceHistory: priceHistory.slice(-7),
-					volumeHistory: volumeHistory.slice(-7)
+					name: Token?.name,
+					address: Token?.token_address,
+					price: priceHistory
 				}
 			}, null, 2);
 		} catch (error) {
-			throw new Error(`Failed to fetch token details: ${error instanceof Error ? error.message : 'Unknown error'}`);
+			return (`Failed to fetch token details: ${error instanceof Error ? error.message : 'Unknown error'}`);
 		}
 	},
 	{
 		name: "get_token_details",
 		description: "Get detailed information about a specific token on Starknet, including price and volume history",
 		schema: z.object({
-			symbol: z.string().describe("The token's symbol"),
 			name: z.string().describe("The token's name")
 		})
 	}
@@ -167,6 +150,7 @@ const getTokenExchangeDataTool = tool(
 
 const getTokenPriceFeedTool = tool(
 	async ({ address }: { address: string }) => {
+		console.log("The address of the token is",address)
 		try {
 			const response = await fetch(`https://starknet.impulse.avnu.fi/v1/tokens/${address}/prices/line`);
 			if (!response.ok) {
@@ -174,16 +158,12 @@ const getTokenPriceFeedTool = tool(
 			}
 
 			const priceFeed = await response.json() as Array<{ date: string; value: number }>;
-
-			// Get the most recent price entry
 			const currentPrice = priceFeed[priceFeed.length - 1]?.value ?? null;
 			const lastUpdated = priceFeed[priceFeed.length - 1]?.date ?? null;
 
-			// Get 24h ago price for percentage calculation
 			const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 			const previousPrice = priceFeed.find((entry: { date: string; value: number }) => entry.date <= oneDayAgo)?.value;
 
-			// Calculate 24h price change percentage
 			const priceChange24h = previousPrice
 				? ((currentPrice - previousPrice) / previousPrice) * 100
 				: null;

@@ -74,15 +74,6 @@ export function reconstructUint256(low: string | number | bigint, high: string |
 	return (highBigInt << BigInt(128)) + lowBigInt;
 }
 
-// const s3Client = new S3Client({
-// 	region: process.env.AWS_REGION,
-// 	credentials: {
-// 		accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-// 		secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-// 	},
-// 	endpoint: process.env.AWS_ENDPOINT
-// });
-
 export const FetchSupportedTokens=async():Promise<Token[]>=>{
 	try{
 		const tokens=await prisma.token.findMany();

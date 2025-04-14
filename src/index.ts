@@ -122,7 +122,7 @@ app.get("/volatile", async (req: Request, res: Response) => {
   }
 });
 
-app.post('/deposit',async (req: Request, res: Response) => {
+app.post('/depositStrkFarm',async (req: Request, res: Response) => {
   try {
     const {
       tokenName,
