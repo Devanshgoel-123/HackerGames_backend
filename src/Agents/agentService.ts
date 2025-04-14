@@ -9,6 +9,17 @@ import { memeTools } from "../tools/unruggable";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import dotenv from "dotenv";
 import { SYSTEM_PROMPT } from "./systemPrompt";
+import { createStarkNetAnalyzerTool } from "../tools/analyze_starknet_sentiment";
+import { StarkNetLLMAnalyzer } from "../tools/llmanalyser";
+
+// Initialize the analyzer (before the tools array)
+const starknetAnalyzer = new StarkNetLLMAnalyzer(
+	process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || ""
+);
+
+// Create the sentiment analyzer tool
+const analyze_sentiment_analyzer = createStarkNetAnalyzerTool(starknetAnalyzer);
+
 
 dotenv.config();
 
@@ -21,6 +32,7 @@ interface ChatResponse {
 const tools = [
 	// ...defiLlamaTools,
 	...defiTransactionsTools,
+	analyze_sentiment_analyzer,
 ];
 
 const llm = new ChatAnthropic({
