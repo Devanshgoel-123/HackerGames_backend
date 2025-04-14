@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "app/generated/prisma/client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model UserPortfolioPreference {
+  id               Int    @id @default(autoincrement())
+  walletAddress    String @unique
+  StablePercentage Int
+  NativePercentage Int
+  OtherPercentage  Int
+}
+
+model User {
+  id            Int           @id @default(autoincrement())
+  walletAddress String        @unique
+  contacts      UserContact[]
+  deposits      Deposit[]     @relation("UserDeposits")
+}
+
+model UserContact {
+  id      Int    @id @default(autoincrement())
+  user    User   @relation(fields: [userId], references: [id])
+  userId  Int
+  name    String
+  address String
+}
+
+model Token {
+  id            Int    @id @default(autoincrement())
+  name          String @default("usdc")
+  token_id      Int    @unique
+  token_address String
+  chain_id      Int
+  decimals      Int
+  type          String
+  image         String @default("default.png")
+}
+
+model Agent {
+  wallet      String    @id // Unique wallet address
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  deposits    Deposit[] @relation("AgentDeposits")
+  trades      Trade[]
+}
+
+model Deposit {
+  id             String   @id @default(uuid())
+  user           User     @relation("UserDeposits", fields: [userWallet], references: [walletAddress])
+  userWallet     String
+  agent          Agent    @relation("AgentDeposits", fields: [agentWallet], references: [wallet])
+  agentWallet    String
+  amount         Decimal
+  stopLoss       Decimal
+  expectedProfit Decimal
+  deadline       DateTime
+  createdAt      DateTime @default(now())
+}
+
+model Trade {
+  id          String   @id @default(uuid())
+  agent       Agent    @relation(fields: [agentWallet], references: [wallet])
+  agentWallet String
+  fromAsset   String
+  amount      Decimal
+  toAsset     String
+  txHash      String?
+  executedAt  DateTime @default(now())
+}
+
+enum TradeType {
+  BUY
+  SELL
+}

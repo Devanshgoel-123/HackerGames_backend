@@ -2,18 +2,15 @@ import { Token, TokenMetadata, TokenBalance, ProtocolConfig, ChainData, TokenFor
 import { RpcProvider, Contract, Call, constants, Provider } from 'starknet';
 import { LP_ABI, ERC20_ABI, STAKING_ABI } from '../constants/contracts';
 import axios from 'axios';
-
-import path from 'path';
-import { PrismaClient } from '@prisma/client';
 import { Fraction, Percent } from "@uniswap/sdk-core";
 import { ProtocolConfigObject } from '../config/protocolConfig';
 import dotenv from 'dotenv';
+import { prisma } from '../db';
 dotenv.config()
 
 const protocolConfig: ProtocolConfig = ProtocolConfigObject
 const PERCENTAGE_INPUT_PRECISION = 2;
 
-// Load provider 
 if (!process.env.ALCHEMY_API_KEY) {
 	throw new Error("Alchemy API configuration is missing");
 }
@@ -88,7 +85,6 @@ export function reconstructUint256(low: string | number | bigint, high: string |
 
 export const FetchSupportedTokens=async():Promise<Token[]>=>{
 	try{
-		const prisma = new PrismaClient();
 		const tokens=await prisma.token.findMany();
 		return tokens;
 	}catch(err){

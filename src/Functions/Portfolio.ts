@@ -7,14 +7,14 @@ import { fetchTokenPrices } from "../utils/defiUtils";
 import { fetchTokenBalance } from "../utils/defiUtils";
 import { SwapAction } from "../types/defi";
 import { ec, stark, hash, transaction } from 'starknet';
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../db";
 import axios from "axios";
 import dotenv from "dotenv";
 import { WeierstrassSignatureType, Signature, Account } from "starknet";
 import { executeSwap, fetchQuotes, QuoteRequest, Quote } from '@avnu/avnu-sdk';
 import { SingularSwapExecution } from "./SwapFunction";
 dotenv.config()
-const prisma = new PrismaClient();
+
 
 enum TokenCategory {
     STABLECOIN = "stable",

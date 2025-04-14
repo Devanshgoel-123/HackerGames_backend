@@ -4,26 +4,28 @@ import cors from "cors";
 import bodyParser = require("body-parser");
 import { generateText } from "ai"
 import { anthropic } from "@ai-sdk/anthropic"
-import axios from "axios";
 import { chatFunction } from "./Agents/agentService";
 import { UserPortfolioRouter } from "./Routes/UserPortfolio";
 import { RebalancePortfolioRouter } from "./Routes/RebalancingPortfolio";
-import { FetchSupportedTokens } from "./utils/defiUtils";
 import { FetchVolatileTokens } from "./Functions/FetchVolatileTokens";
 import { DepositFunction } from "./Functions/StrkFarm";
 import { CronJob, CronTime } from 'cron';
 import { RebalancerReusableFunction } from "./Functions/Portfolio";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "./db";
+import { UserContactRouter } from "./Routes/UserContact";
+import { AutonomousRouter } from "./Routes/Autonomous";
 dotenv.config()
 const app: Express = express();
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use("/userPortfolio",UserPortfolioRouter)
-app.use("/rebalance",RebalancePortfolioRouter)
+app.use("/userPortfolio",UserPortfolioRouter);
+app.use("/autonomous",AutonomousRouter);
+app.use("/rebalance",RebalancePortfolioRouter);
+app.use("/userContact",UserContactRouter);
 const PORT = process.env.PORT || 3002;
 
-const prisma=new PrismaClient()
+
 
 const rebalancerJob=new CronJob(
      '0 0 */6 * * *',
@@ -46,6 +48,7 @@ const rebalancerJob=new CronJob(
 	  true,
 	'Asia/Kolkata'
 )
+
 
 
 
