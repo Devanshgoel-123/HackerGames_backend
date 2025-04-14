@@ -18,7 +18,7 @@ if (!process.env.ALCHEMY_API_KEY) {
 	throw new Error("Alchemy API configuration is missing");
 }
 
-const provider = new Provider({
+export const provider = new Provider({
 	nodeUrl:`${process.env.ALCHEMY_API_KEY}`
 });
 

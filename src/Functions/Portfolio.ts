@@ -12,6 +12,7 @@ import axios from "axios";
 import dotenv from "dotenv";
 import { WeierstrassSignatureType, Signature, Account } from "starknet";
 import { executeSwap, fetchQuotes, QuoteRequest, Quote } from '@avnu/avnu-sdk';
+import { SingularSwapExecution } from "./SwapFunction";
 dotenv.config()
 const prisma = new PrismaClient();
 
@@ -283,14 +284,12 @@ export const RebalancerReusableFunction = async (
           userPortfolio
         };
       }
-      await executeSwapFunction(requiredSwaps,accountAddress)
+      //await executeSwapFunction(requiredSwaps,accountAddress)
       await saveUserPreference(accountAddress, targetAllocation);
       return {
         success: true,
         message: `Swapped the required assets on your behalf, swap successful.`,
-        currentAllocation,
-        targetAllocation,
-        userPortfolio,
+        requiredSwaps:requiredSwaps
       };
     } catch (error) {
       console.error("Portfolio rebalancing failed:", error);
@@ -305,7 +304,7 @@ export const RebalancerReusableFunction = async (
 
 export const executeSwapFunction=async (swaps:SwapAction[],userAddress:string)=>{
   try{
-  const formattedAmount ='0x'+BigInt(2000000).toString(16);
+
   const provider = new Provider({
     nodeUrl:`${process.env.ALCHEMY_API_KEY}`
   });
@@ -321,31 +320,11 @@ export const executeSwapFunction=async (swaps:SwapAction[],userAddress:string)=>
   const txHashes: string[] = [];
 
   for (const swap of swaps) {
-    const quoteRes = await axios.get('https://starknet.api.avnu.fi/swap/v2/quotes', {
-      params: {
-        sellTokenAddress: swap.from_token_address,
-        buyTokenAddress: swap.to_token_address,
-        takerAddress: userAddress,
-        sellAmount: formattedAmount,
-      },
-    });
-    const dataObject=quoteRes.data[0];
-    console.log("The quotes from sdk are",)
-    if (!quoteRes.data.length) {
-      throw new Error('No quotes available for this swap');
-    }
-     try{
-      const executeSwapTransaction = await executeSwap(account,dataObject, {
-        slippage: 0.1,
-      });
-      console.log(`✅ Swap successful! Tx hash: ${executeSwapTransaction.transactionHash} ${swap.from_token_address} ${swap.to_token_address}`);
-      txHashes.push(executeSwapTransaction.transactionHash);
-      return executeSwapTransaction.transactionHash;
-     }catch(err){
-      console.log("Error while sending the transactions",err);
-     }
+      const swapSendingHash=await SingularSwapExecution(swap,account.address)
+      console.log(`✅ Swap successful! Tx hash: ${swapSendingHash} ${swap.from_token_address} ${swap.to_token_address}`);
+      txHashes.push(swapSendingHash as string);
+      return swapSendingHash
   }
-
   return txHashes;
  
 }catch(err){

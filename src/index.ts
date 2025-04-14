@@ -10,6 +10,10 @@ import { UserPortfolioRouter } from "./Routes/UserPortfolio";
 import { RebalancePortfolioRouter } from "./Routes/RebalancingPortfolio";
 import { FetchSupportedTokens } from "./utils/defiUtils";
 import { FetchVolatileTokens } from "./Functions/FetchVolatileTokens";
+import { DepositFunction } from "./Functions/StrkFarm";
+import { CronJob, CronTime } from 'cron';
+import { RebalancerReusableFunction } from "./Functions/Portfolio";
+import { PrismaClient } from "@prisma/client";
 dotenv.config()
 const app: Express = express();
 app.use(cors());
@@ -18,6 +22,31 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/userPortfolio",UserPortfolioRouter)
 app.use("/rebalance",RebalancePortfolioRouter)
 const PORT = process.env.PORT || 3002;
+
+const prisma=new PrismaClient()
+
+const rebalancerJob=new CronJob(
+     '0 0 */6 * * *',
+     async function(){
+      console.log("🔄 Running rebalancer job...");
+      const UserPreference=await prisma.userPortfolioPreference.findMany();
+      await Promise.all(UserPreference.map(async (item)=>{
+        await RebalancerReusableFunction(
+          item.StablePercentage,
+          item.NativePercentage,
+          item.OtherPercentage,
+          item.walletAddress
+        ); 
+      }))
+      console.log("✅ Rebalancer job completed.");  
+     },
+     ()=>{
+      console.log("Ran the rebalance function")
+     },
+	  true,
+	'Asia/Kolkata'
+)
+
 
 
 
@@ -90,11 +119,31 @@ app.get("/volatile", async (req: Request, res: Response) => {
   }
 });
 
+app.post('/deposit',async (req: Request, res: Response) => {
+  try {
+    const {
+      tokenName,
+      amount,
+      accountAddress,
+    }=req.body;
+    const result= await DepositFunction(tokenName,amount,accountAddress)
+    console.log(result)
+    res.json({
+        data:"Hello deposit successfully"
+    });
+  } catch (error) {
+    console.error("Error in /volatile endpoint:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch token price changes",
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 
 
 app.listen(`${PORT}`, () => {
     console.log(`[server]: Server is running at http://localhost:${PORT}`);
 });
   
-  
-  
+
