@@ -11,6 +11,7 @@ import dotenv from "dotenv";
 import { SYSTEM_PROMPT } from "./systemPrompt";
 import { createStarkNetAnalyzerTool } from "../tools/analyze_starknet_sentiment";
 import { StarkNetLLMAnalyzer } from "../tools/llmanalyser";
+import { starknetTransactionTools } from "../tools/starknetTransactionTools";
 
 const starknetAnalyzer = new StarkNetLLMAnalyzer(
 	process.env.OPENROUTER_API_KEY || process.env.ANTHROPIC_API_KEY || ""
@@ -29,9 +30,10 @@ interface ChatResponse {
 
 const tools = [
 	// ...defiLlamaTools,
-	 ...starknetTools,
-	// ...defiTransactionsTools,
+	//...starknetTools,
+	//...defiTransactionsTools,
 	analyze_sentiment_analyzer,
+	...starknetTransactionTools
 ];
 
 const llm = new ChatAnthropic({
