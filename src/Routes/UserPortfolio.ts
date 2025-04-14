@@ -16,11 +16,8 @@ UserPortfolioRouter.get("/",async (req:Request,res:Response):Promise<any>=>{
         if(agentWalletAddress==="" || agentWalletAddress===undefined) return res.send({
             data:"Please connect your wallet"
         })
-        const accountAddress=agentWalletAddress;
         const userPortfolio=await fetchUserPortfolio(agentWalletAddress.toString())
-        // const userAllocations= calculateCurrentAllocation(userPortfolio)
         console.log("the user portfolio is",userPortfolio);
-        // console.log("the user allocations are",userAllocations);
 	    return res.json({
         userPortfolio,
 	  });

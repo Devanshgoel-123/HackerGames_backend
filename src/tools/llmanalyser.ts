@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { z } from "zod";
-
+import dotenv from "dotenv";
+dotenv.config()
 interface TradingRecommendation {
     recommendation: "BUY" | "SELL" | "HOLD";
     confidence: number;

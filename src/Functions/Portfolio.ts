@@ -94,7 +94,6 @@ export function calculateCurrentAllocation(portfolio: Portfolio): Record<TokenCa
     const swaps: SwapAction[] = [];
     const totalValue = portfolio.total_value_usd;
       console.log("Calculating swaps");
-    // Convert percentage allocations to USD values
     const targetValues: Record<TokenCategory, number> = {
       [TokenCategory.STABLECOIN]: (targetAllocation[TokenCategory.STABLECOIN] / 100) * totalValue,
       [TokenCategory.NATIVE]: (targetAllocation[TokenCategory.NATIVE] / 100) * totalValue,
@@ -306,7 +305,7 @@ export const RebalancerReusableFunction = async (
 
 export const executeSwapFunction=async (swaps:SwapAction[],userAddress:string)=>{
   try{
-  const formattedAmount ='0x'+BigInt(Math.floor(0.0007 * 10**(swaps[0].fromTokenDecimals))).toString();
+  const formattedAmount ='0x'+BigInt(2000000).toString(16);
   const provider = new Provider({
     nodeUrl:`${process.env.ALCHEMY_API_KEY}`
   });
@@ -319,25 +318,35 @@ export const executeSwapFunction=async (swaps:SwapAction[],userAddress:string)=>
     undefined,
     constants.TRANSACTION_VERSION.V3
   );
-  const result= await axios.get('https://starknet.api.avnu.fi/swap/v2/quotes', {
-    params:{
-      sellTokenAddress:swaps[0].from_token_address,
-      buyTokenAddress:swaps[0].to_token_address,
-      takerAddress:userAddress,
-      sellAmount:formattedAmount
+  const txHashes: string[] = [];
+
+  for (const swap of swaps) {
+    const quoteRes = await axios.get('https://starknet.api.avnu.fi/swap/v2/quotes', {
+      params: {
+        sellTokenAddress: swap.from_token_address,
+        buyTokenAddress: swap.to_token_address,
+        takerAddress: userAddress,
+        sellAmount: formattedAmount,
+      },
+    });
+    const dataObject=quoteRes.data[0];
+    console.log("The quotes from sdk are",)
+    if (!quoteRes.data.length) {
+      throw new Error('No quotes available for this swap');
     }
-});
-console.log(result.data); 
-const dataObject=result.data[0];
-  console.log("The quotes from sdk are",)
-  if (!result.data?.length) {
-    throw new Error('No quotes available for this swap');
+     try{
+      const executeSwapTransaction = await executeSwap(account,dataObject, {
+        slippage: 0.1,
+      });
+      console.log(`✅ Swap successful! Tx hash: ${executeSwapTransaction.transactionHash} ${swap.from_token_address} ${swap.to_token_address}`);
+      txHashes.push(executeSwapTransaction.transactionHash);
+      return executeSwapTransaction.transactionHash;
+     }catch(err){
+      console.log("Error while sending the transactions",err);
+     }
   }
- 
-  const swapResult = await executeSwap(account,dataObject, {
-    slippage: 0.1,
-  });
-  console.log(swapResult)
+
+  return txHashes;
  
 }catch(err){
     console.log("The error is",err)

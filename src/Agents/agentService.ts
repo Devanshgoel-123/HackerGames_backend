@@ -12,12 +12,10 @@ import { SYSTEM_PROMPT } from "./systemPrompt";
 import { createStarkNetAnalyzerTool } from "../tools/analyze_starknet_sentiment";
 import { StarkNetLLMAnalyzer } from "../tools/llmanalyser";
 
-// Initialize the analyzer (before the tools array)
 const starknetAnalyzer = new StarkNetLLMAnalyzer(
-	process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || ""
+	process.env.OPENROUTER_API_KEY || process.env.ANTHROPIC_API_KEY || ""
 );
 
-// Create the sentiment analyzer tool
 const analyze_sentiment_analyzer = createStarkNetAnalyzerTool(starknetAnalyzer);
 
 
@@ -31,7 +29,8 @@ interface ChatResponse {
 
 const tools = [
 	// ...defiLlamaTools,
-	...defiTransactionsTools,
+	 ...starknetTools,
+	// ...defiTransactionsTools,
 	analyze_sentiment_analyzer,
 ];
 
@@ -45,14 +44,6 @@ const llm = new ChatAnthropic({
 	temperature: 0.5,
 	streaming: false,
 });
-
-// const llm = new ChatOpenAI({
-// 	modelName: "gpt-4o-2024-11-20",
-// 	temperature: 0,
-// 	streaming: false,
-// 	apiKey: process.env.OPEN_AI_API_KEY,
-// });
-
 
 export async function chatFunction(
 	messages: { role: string; content: string }[], // { role :"assistant" , content:"waht is the price of agent"}

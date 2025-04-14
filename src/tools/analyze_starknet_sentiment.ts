@@ -1,8 +1,8 @@
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
 import { StarkNetLLMAnalyzer, StarkNetAnalysisResult } from "./llmanalyser";
-
-// Define the specific ecosystem project type structure that matches the interface requirement
+import dotenv from "dotenv";
+dotenv.config()
 interface EcosystemProjects {
     starkware: number;
     argent: number;
@@ -76,7 +76,6 @@ export function createStarkNetAnalyzerTool(analyzer: StarkNetLLMAnalyzer) {
                          priceData,
                          confidenceThreshold = 60
                      }) => {
-            // Ensure we have the required structure with all required fields
             const baseEcosystem: EcosystemProjects = {
                 starkware: 0,
                 argent: 0,
@@ -89,13 +88,12 @@ export function createStarkNetAnalyzerTool(analyzer: StarkNetLLMAnalyzer) {
                 kakarot: 0
             };
 
-            // Merge the provided ecosystem data with our base structure
+
             const mergedEcosystem: EcosystemProjects = {
                 ...baseEcosystem,
                 ...ecosystemAnalysis
             };
 
-            // Generate or use provided ecosystem analysis data
             const actualEcosystemAnalysis: EcosystemProjects = Object.keys(mergedEcosystem).reduce((acc, key) => {
                 if (mergedEcosystem[key] === 0) {
                     // Generate random data for missing metrics
@@ -106,14 +104,14 @@ export function createStarkNetAnalyzerTool(analyzer: StarkNetLLMAnalyzer) {
                 return acc;
             }, {} as EcosystemProjects);
 
-            // Ensure all required properties are set
+
             Object.keys(baseEcosystem).forEach(key => {
                 if (actualEcosystemAnalysis[key] === undefined) {
                     actualEcosystemAnalysis[key] = Math.floor(Math.random() * 50 + 10);
                 }
             });
 
-            // Generate or use provided sentiment data
+
             const totalSentiment = (sentimentAnalysis.positive || 0) +
                 (sentimentAnalysis.negative || 0) +
                 (sentimentAnalysis.neutral || 0);
@@ -146,14 +144,12 @@ export function createStarkNetAnalyzerTool(analyzer: StarkNetLLMAnalyzer) {
                 zkTechnology: developmentMetrics.zkTechnology || Math.floor(Math.random() * 120 + 30)
             };
 
-            // Generate or use provided community metrics
             const actualCommunityMetrics = {
                 totalEngagement: communityMetrics.totalEngagement || Math.floor(Math.random() * 5000 + 1000),
                 uniqueUsers: communityMetrics.uniqueUsers || Math.floor(Math.random() * 500 + 100),
                 avgEngagementPerTweet: communityMetrics.avgEngagementPerTweet || Math.floor(Math.random() * 50 + 5)
             };
 
-            // Process price data
             const processedPriceData = priceData ? {
                 current: priceData.current,
                 yesterday: priceData.yesterday ?? (priceData.current * (1 - (Math.random() * 0.05 - 0.025))),
@@ -164,7 +160,7 @@ export function createStarkNetAnalyzerTool(analyzer: StarkNetLLMAnalyzer) {
                     ((priceData.weekAgo ? (priceData.current / priceData.weekAgo - 1) * 100 : Math.random() * 20 - 10))
             } : undefined;
 
-            // Construct the StarkNet analysis result
+
             const starkNetResult: StarkNetAnalysisResult = {
                 query,
                 totalTweets,

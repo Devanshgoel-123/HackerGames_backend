@@ -1,7 +1,8 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { Scraper, Tweet } from "@the-convocation/twitter-scraper";
-
+import dotenv from "dotenv";
+dotenv.config()
 // Define interfaces
 interface SafeTweet extends Tweet {
   text: string;
