@@ -132,7 +132,7 @@ class StarkNetLLMAnalyzer {
                 console.warn("Analysis data failed validation, returning default recommendation");
                 return this.getDefaultRecommendation("Insufficient or low-quality data");
             }
-    
+
             // Fetch volatility data if requested and not already included
             if (includeVolatility && !analysisResult.volatilityData) {
                 try {
@@ -146,16 +146,16 @@ class StarkNetLLMAnalyzer {
                     // Continue without volatility data
                 }
             }
-    
+
             // Prepare data and get model recommendation
             const modelResponse: ModelResponse = {
                 model: primaryModel,
                 recommendation: await this.getModelRecommendation(analysisResult, cryptoSymbol, primaryModel)
             };
-    
+
             return this.applyBusinessRules(
-                modelResponse.recommendation, 
-                confidenceThreshold, 
+                modelResponse.recommendation,
+                confidenceThreshold,
                 analysisResult.volatilityData
             );
         } catch (error) {
@@ -173,26 +173,26 @@ class StarkNetLLMAnalyzer {
     } {
         // Process the volatility data
         const tokensWithVolatility = tokenData.map(token => {
-            const volatilityValue = typeof token.volatility === 'object' ? 
-                token.volatility.percentChange24h : 
+            const volatilityValue = typeof token.volatility === 'object' ?
+                token.volatility.percentChange24h :
                 typeof token.volatility === 'number' ? token.volatility : 0;
-            
+
             return {
                 ...token,
                 volatilityValue,
-                riskCategory: Math.abs(volatilityValue) >= 10 ? "HIGH" : 
+                riskCategory: Math.abs(volatilityValue) >= 10 ? "HIGH" :
                               Math.abs(volatilityValue) >= 5 ? "MEDIUM" : "LOW"
             };
         });
-    
+
         // Calculate average volatility
         const totalVolatility = tokensWithVolatility.reduce((sum, token) => {
             return sum + Math.abs(token.volatilityValue || 0);
         }, 0);
-        
-        const avgVolatility = tokensWithVolatility.length > 0 ? 
+
+        const avgVolatility = tokensWithVolatility.length > 0 ?
             totalVolatility / tokensWithVolatility.length : 0;
-        
+
         // Identify high/low volatility tokens
         const highVolatilityTokens: string[] = tokensWithVolatility
             .filter(t => t.riskCategory === "HIGH")
@@ -200,14 +200,14 @@ class StarkNetLLMAnalyzer {
             .slice(0, 5)
             .map(t => t.token_symbol || 'Unknown')
             .filter(Boolean);
-        
+
         const lowVolatilityTokens: string[] = tokensWithVolatility
             .filter(t => t.riskCategory === "LOW")
             .sort((a, b) => Math.abs(a.volatilityValue || 0) - Math.abs(b.volatilityValue || 0))
             .slice(0, 5)
             .map(t => t.token_symbol || 'Unknown')
             .filter(Boolean);
-        
+
         // Determine market volatility level with proper type
         let marketVolatilityLevel: "HIGH" | "MEDIUM" | "LOW";
         if (avgVolatility >= 8) {
@@ -217,7 +217,7 @@ class StarkNetLLMAnalyzer {
         } else {
             marketVolatilityLevel = "LOW";
         }
-        
+
         return {
             tokens: tokensWithVolatility,
             averageVolatility: parseFloat(avgVolatility.toFixed(2)),
@@ -387,7 +387,7 @@ ECOSYSTEM PROJECT MENTIONS:
 
 SENTIMENT ANALYSIS:${sentimentBreakdown}
 
-- Top hashtags: ${topHashtags.join(', ')}${influencers}${developmentAnalysis}${communityAnalysis}${volatilityContext}${tweetSamples}${priceContext}
+- Top hashtags: ${topHashtags.join(', ')}${influencers}${developmentAnalysis}${communityAnalysis}${tweetSamples}${priceContext}
 
 Based on this StarkNet ecosystem data, volatility metrics, and market information, provide a trading recommendation in the following JSON format:
 {
@@ -523,18 +523,18 @@ Respond ONLY with the JSON object, no other text.
         }
 
         // Rule 4: High market volatility with BUY recommendation should be reconsidered
-        if (volatilityData && 
-            volatilityData.marketVolatilityLevel === "HIGH" && 
+        if (volatilityData &&
+            volatilityData.marketVolatilityLevel === "HIGH" &&
             recommendation.recommendation === "BUY" &&
             recommendation.confidence < 85) {
-            
+
             // Ensure volatility insights exist and are properly initialized
             const currentVolatilityInsights = recommendation.volatilityInsights || {
                 marketVolatility: "UNKNOWN",
                 volatileTokens: [],
                 stableTokens: []
             };
-            
+
             return {
                 ...recommendation,
                 recommendation: "HOLD",
@@ -574,7 +574,7 @@ Respond ONLY with the JSON object, no other text.
     async analyze(input: z.infer<typeof StarkNetAnalyzerSchema>): Promise<TradingRecommendation> {
         try {
             console.log(`Analyzing ${input.query} with max tweets: ${input.maxTweets}`);
-            
+
             // If volatility analysis is requested, fetch the volatility data
             let volatilityData;
             if (input.includeVolatility) {
@@ -585,11 +585,11 @@ Respond ONLY with the JSON object, no other text.
                     console.warn("Failed to fetch volatility data:", error);
                 }
             }
-            
+
             // If we have volatility data but no other data, return a volatility-focused recommendation
             if (volatilityData) {
                 const processedVolatility = this.processVolatilityData(volatilityData);
-                
+
                 // Create a minimal analysis result with the volatility data
                 const analysisResult: StarkNetAnalysisResult = {
                     query: input.query,
@@ -607,7 +607,7 @@ Respond ONLY with the JSON object, no other text.
                     },
                     volatilityData: processedVolatility
                 };
-                
+
                 // Get trading recommendation using the available data
                 return await this.analyzeTradingDecision(
                     analysisResult,
@@ -617,7 +617,7 @@ Respond ONLY with the JSON object, no other text.
                     true
                 );
             }
-            
+
             return this.getDefaultRecommendation("Scraper implementation required");
         } catch (error) {
             console.error("Error in analyze method:", error);
