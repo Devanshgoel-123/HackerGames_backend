@@ -2,7 +2,7 @@ import { Router } from "express";
 import axios from "axios";
 import express from "express";
 import { Request,Response } from "express";
-import { MakeDepositToAgent } from "../Functions/Autonomous";
+import { fetchTransactionByAgent, MakeDepositToAgent } from "../Functions/Autonomous";
 
 
 export const AutonomousRouter:Router=express.Router();
@@ -33,4 +33,23 @@ AutonomousRouter.post("/createDeposit",async (req:Request, res:Response):Promise
     }
 })
 
+AutonomousRouter.get("/getTransactionsByAgent",async (req:Request, res:Response):Promise<any>=>{
+    try{
+        const {
+            agentWalletAddress
+        }=req.query;
+        if(agentWalletAddress===undefined){
+            return res.status(400).send({
+                status:true,
+                message:"Please provide the correct agent address"
+            })
+        }
+        const result=await fetchTransactionByAgent(agentWalletAddress.toString())
+        return res.send({
+            status:true,
+            message:result
+        })
+    }catch(err){
 
+    }
+})

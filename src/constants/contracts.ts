@@ -1,3 +1,5 @@
+import { DepositWithdrawPool } from "../types/defi";
+
 export const ERC20_ABI = [
 	{
 		name: "balanceOf",
@@ -59,3 +61,6 @@ export const STAKING_ABI = [
 	}
 ] as const;
 
+
+
+export const ACCOUNT_ADDRESS="0x00077ce068f5597e56bbb601bd0d906b040f3a7007ec6fd2db3c8a25368af4b5"

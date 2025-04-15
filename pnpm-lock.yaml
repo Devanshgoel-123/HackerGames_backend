@@ -23,6 +23,9 @@ importers:
       '@langchain/core':
         specifier: ^0.3.44
         version: 0.3.44(openai@4.93.0(ws@8.18.0)(zod@3.24.2))
+      '@langchain/google-genai':
+        specifier: ^0.2.3
+        version: 0.2.3(@langchain/core@0.3.44(openai@4.93.0(ws@8.18.0)(zod@3.24.2)))(zod@3.24.2)
       '@langchain/langgraph':
         specifier: ^0.2.63
         version: 0.2.63(@langchain/core@0.3.44(openai@4.93.0(ws@8.18.0)(zod@3.24.2)))(react@19.1.0)(zod-to-json-schema@3.24.5(zod@3.24.2))
@@ -522,6 +525,10 @@ packages:
   '@ethersproject/strings@5.7.0':
     resolution: {integrity: sha512-/9nu+lj0YswRNSH0NXYqrh8775XNyEdUQAuf3f+SmOrnVewcJ5SBNAjF7lpgehKi4abvNNXyf+HX86czCdJ8Mg==}
 
+  '@google/generative-ai@0.24.0':
+    resolution: {integrity: sha512-fnEITCGEB7NdX0BhoYZ/cq/7WPZ1QS5IzJJfC3Tg/OwkvBetMiVJciyaan297OvE4B9Jg1xvo0zIazX/9sGu1Q==}
+    engines: {node: '>=18.0.0'}
+
   '@istanbuljs/load-nyc-config@1.1.0':
     resolution: {integrity: sha512-VjeHSlIzpv/NyD3N0YuHfXOPDIixcA1q2ZV98wsMqcYlPmv2n3Yb2lYP9XMElnaFVXg5A7YLTeLu6V84uQDjmQ==}
     engines: {node: '>=8'}
@@ -626,6 +633,12 @@ packages:
   '@langchain/core@0.3.44':
     resolution: {integrity: sha512-3BsSFf7STvPPZyl2kMANgtVnCUvDdyP4k+koP+nY2Tczd5V+RFkuazIn/JOj/xxy/neZjr4PxFU4BFyF1aKXOA==}
     engines: {node: '>=18'}
+
+  '@langchain/google-genai@0.2.3':
+    resolution: {integrity: sha512-2oWH24zPZh+HkgFcgcQClnsST3shMDuDToMolnWsRPg6wR7G6sAOkHQdqmHVxc4qAJx5wopf+vH0j+zbCk+Bag==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@langchain/core': '>=0.3.17 <0.4.0'
 
   '@langchain/langgraph-checkpoint@0.0.16':
     resolution: {integrity: sha512-B50l7w9o9353drHsdsD01vhQrCJw0eqvYeXid7oKeoj1Yye+qY90r97xuhiflaYCZHM5VEo2oaizs8oknerZsQ==}
@@ -2608,6 +2621,10 @@ packages:
     resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
     hasBin: true
 
+  uuid@11.1.0:
+    resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
+    hasBin: true
+
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
     hasBin: true
@@ -3111,6 +3128,8 @@ snapshots:
       '@ethersproject/constants': 5.8.0
       '@ethersproject/logger': 5.8.0
 
+  '@google/generative-ai@0.24.0': {}
+
   '@istanbuljs/load-nyc-config@1.1.0':
     dependencies:
       camelcase: 5.3.1
@@ -3331,6 +3350,15 @@ snapshots:
       zod-to-json-schema: 3.24.5(zod@3.24.2)
     transitivePeerDependencies:
       - openai
+
+  '@langchain/google-genai@0.2.3(@langchain/core@0.3.44(openai@4.93.0(ws@8.18.0)(zod@3.24.2)))(zod@3.24.2)':
+    dependencies:
+      '@google/generative-ai': 0.24.0
+      '@langchain/core': 0.3.44(openai@4.93.0(ws@8.18.0)(zod@3.24.2))
+      uuid: 11.1.0
+      zod-to-json-schema: 3.24.5(zod@3.24.2)
+    transitivePeerDependencies:
+      - zod
 
   '@langchain/langgraph-checkpoint@0.0.16(@langchain/core@0.3.44(openai@4.93.0(ws@8.18.0)(zod@3.24.2)))':
     dependencies:
@@ -5615,6 +5643,8 @@ snapshots:
   utils-merge@1.0.1: {}
 
   uuid@10.0.0: {}
+
+  uuid@11.1.0: {}
 
   uuid@8.3.2: {}
 

@@ -86,3 +86,26 @@ export const MakeDepositToAgent=async (input:Deposit)=>{
         }
     }
 }
+
+export const fetchTransactionByAgent=async (agentWalletAddress:string)=>{
+    try{
+        const result=await prisma.trade.findMany({
+            where:{
+                agentWallet:agentWalletAddress
+            }
+        })
+        if(result===null){
+            return {
+                message:"Couldn't find any transactions for the agent"
+            }
+        }
+    return {
+        message:result
+    }
+    }catch(err){
+        console.log("Error fetching the transactions by the agent")
+        return {
+            message:"Error Fetching any transactions by the agent"
+        }
+    }
+}

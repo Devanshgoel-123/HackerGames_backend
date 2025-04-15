@@ -8,12 +8,15 @@ import { chatFunction } from "./Agents/agentService";
 import { UserPortfolioRouter } from "./Routes/UserPortfolio";
 import { RebalancePortfolioRouter } from "./Routes/RebalancingPortfolio";
 import { FetchVolatileTokens } from "./Functions/FetchVolatileTokens";
-import { DepositFunction } from "./Functions/StrkFarm";
+import { SwapVolatileAssets } from "./Functions/FetchVolatileTokens";
 import { CronJob, CronTime } from 'cron';
 import { RebalancerReusableFunction } from "./Functions/Portfolio";
 import { prisma } from "./db";
 import { UserContactRouter } from "./Routes/UserContact";
 import { AutonomousRouter } from "./Routes/Autonomous";
+import { DepositWithdrawRouter } from "./Routes/DepositWithdraw";
+import { WithDrawFunctionEndufi } from "./Functions/EnduFi";
+import { DepositFunctionStrkFarm } from "./Functions/StrkFarm";
 dotenv.config()
 const app: Express = express();
 app.use(cors());
@@ -23,6 +26,9 @@ app.use("/userPortfolio",UserPortfolioRouter);
 app.use("/autonomous",AutonomousRouter);
 app.use("/rebalance",RebalancePortfolioRouter);
 app.use("/userContact",UserContactRouter);
+app.use("/depositWithdraw",DepositWithdrawRouter);
+
+
 const PORT = process.env.PORT || 3002;
 
 
@@ -50,6 +56,24 @@ const rebalancerJob=new CronJob(
 )
 
 
+const volatileJob=new CronJob(
+  '0 0 */6 * * *',
+  async function(){
+    console.log("🔄 Running rebalancer job...");
+    const user=await prisma.user.findMany();
+    const response=await Promise.all(user.map(async (item)=>{
+      const result= await SwapVolatileAssets(item.walletAddress);
+      return result
+    }))
+    console.log("✅ Volatile Balancer Cron job completed.");  
+   },
+   ()=>{
+    console.log("Ran the Volatile Asset Swapping function")
+   },
+  true,
+'Asia/Kolkata'
+)
+
 
 
 
@@ -62,34 +86,12 @@ app.get("/", async (req: Request, res: Response):Promise<any> => {
             system:"You are a traditional Defi agent which has access to various information about decentralized finance, use it and work your best"
     })
     console.log(JSON.stringify(result.response.body, null, 2));
-    // {
-    //     "id": "msg_01T3pJh76uo5BQD8KSLWZPUe",
-    //     "type": "message",
-    //     "role": "assistant",
-    //     "model": "claude-3-5-sonnet-20241022",
-    //     "content": [
-    //       {
-    //         "type": "text",
-    //         "text": "I apologize, but I don't have access to real-time price data. USDC (USD Coin) is designed to maintain a stable 1:1 peg with the US Dollar, so its price should theoretically always be very close to $1.00. However, there can be slight variations due to market conditions.\n\nTo get the current exact price of USDC on Ethereum, you can:\n\n1. Check popular cryptocurrency exchanges like Coinbase, Binance, or Uniswap\n2. Use price aggregators like CoinGecko or CoinMarketCap\n3. Look at DeFi dashboards like DeBank or Zapper\n\nThese sources will give you the most up-to-date and accurate price information for USDC on Ethereum."
-    //       }
-    //     ],
-    //     "stop_reason": "end_turn",
-    //     "stop_sequence": null,
-    //     "usage": {
-    //       "input_tokens": 42,
-    //       "cache_creation_input_tokens": 0,
-    //       "cache_read_input_tokens": 0,
-    //       "output_tokens": 176
-    //     }
-    //   }
-
     return res.send({
         message:result.text
     })
     }catch(err){
 
     }
-   
   });
 
 app.post("/agent", async (req:Request, res:Response):Promise<any> =>{
@@ -129,7 +131,8 @@ app.post('/depositStrkFarm',async (req: Request, res: Response) => {
       amount,
       accountAddress,
     }=req.body;
-    const result= await DepositFunction(tokenName,amount,accountAddress)
+    const result= await DepositFunctionStrkFarm(tokenName,amount,accountAddress)
+    //const result=await WithDrawFunctionEndufi(tokenName,amount,accountAddress);
     console.log(result)
     res.json({
         data:"Hello deposit successfully"

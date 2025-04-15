@@ -46,7 +46,7 @@ export async function fetchUserPortfolio(accountAddress: string): Promise<Portfo
     console.log("THe tokens to check are",tokensToCheck)
     const balancesWithUSD = await Promise.all(
         tokensToCheck.map((token: any) =>
-            fetchTokenBalance(token, accountAddress, tokenPrices)
+             fetchTokenBalance(token, accountAddress, tokenPrices)
         )
     );
     balancesWithUSD.map((item:TokenForPortfolio)=>{

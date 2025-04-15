@@ -1,282 +1,176 @@
-import { Contract, RpcProvider, Account, uint256, Uint256 } from "starknet";
+import { Contract, RpcProvider } from "starknet";
+import { FetchSupportedTokens } from "../utils/defiUtils";
+import { ec } from "starknet";
+import { Account } from "starknet";
 import dotenv from "dotenv";
+dotenv.config()
+import { uint256 } from "starknet";
 
-dotenv.config();
+const provider = new RpcProvider({ nodeUrl: process.env.ALCHEMY_API_KEY });
+const ENDUFICONTRACT="0x28d709c875c0ceac3dce7065bec5328186dc89fe254527084d1689910954b0a";
 
-const provider = new RpcProvider({
-  nodeUrl: process.env.ALCHEMY_API_KEY
-});
-
-const ENDURFI_CONTRACT = {
-  strk: "0x28d709c875c0ceac3dce7065bec5328186dc89fe254527084d1689910954b0a",
-};
-
-const ENDURFI_ABI = [
+const depositWithdrawABI=[
   {
-    type: "function",
-    name: "asset",
-    inputs: [],
-    outputs: [
+    "type": "function",
+    "name": "deposit",
+    "inputs": [
       {
-        type: "core::starknet::contract_address::ContractAddress",
+        "name": "assets",
+        "type": "core::integer::u256"
       },
+      {
+        "name": "receiver",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
     ],
-    state_mutability: "view",
+    "outputs": [
+      {
+        "type": "core::integer::u256"
+      }
+    ],
+    "state_mutability": "external"
   },
   {
-    type: "function",
-    name: "total_assets",
-    inputs: [],
-    outputs: [
+    "type": "function",
+    "name": "withdraw",
+    "inputs": [
       {
-        type: "core::integer::u256",
+        "name": "assets",
+        "type": "core::integer::u256"
       },
+      {
+        "name": "receiver",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "owner",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
     ],
-    state_mutability: "view",
+    "outputs": [
+      {
+        "type": "core::integer::u256"
+      }
+    ],
+    "state_mutability": "external"
   },
   {
-    type: "function",
-    name: "convert_to_shares",
-    inputs: [
+    "type": "function",
+    "name": "approve",
+    "inputs": [
       {
-        name: "assets",
-        type: "core::integer::u256",
+        "name": "spender",
+        "type": "core::starknet::contract_address::ContractAddress"
       },
-    ],
-    outputs: [
       {
-        type: "core::integer::u256",
-      },
+        "name": "amount",
+        "type": "core::integer::u256"
+      }
     ],
-    state_mutability: "view",
+    "outputs": [
+      {
+        "type": "core::bool"
+      }
+    ],
+    "state_mutability": "external"
   },
   {
-    type: "function",
-    name: "deposit",
-    inputs: [
+    "type": "function",
+    "name": "max_withdraw",
+    "inputs": [
       {
-        name: "assets",
-        type: "core::integer::u256",
-      },
-      {
-        name: "receiver",
-        type: "core::starknet::contract_address::ContractAddress",
-      },
+        "name": "owner",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
     ],
-    outputs: [
+    "outputs": [
       {
-        type: "core::integer::u256",
-      },
+        "type": "core::integer::u256"
+      }
     ],
-    state_mutability: "external",
+    "state_mutability": "view"
   },
   {
-    type: "function",
-    name: "withdraw",
-    inputs: [
+    "type": "function",
+    "name": "approve",
+    "inputs": [
       {
-        name: "assets",
-        type: "core::integer::u256",
+        "name": "spender",
+        "type": "core::starknet::contract_address::ContractAddress"
       },
       {
-        name: "receiver",
-        type: "core::starknet::contract_address::ContractAddress",
-      },
-      {
-        name: "owner",
-        type: "core::starknet::contract_address::ContractAddress",
-      },
+        "name": "amount",
+        "type": "core::integer::u256"
+      }
     ],
-    outputs: [
+    "outputs": [
       {
-        type: "core::integer::u256",
-      },
+        "type": "core::bool"
+      }
     ],
-    state_mutability: "external",
-  },
-];
+    "state_mutability": "external"
+  }
+]
 
-export const DepositFunction = async (tokenName: string, amount: string, accountAddress: string) => {
-  try {
-    if (!tokenName.toLowerCase().includes("strk")) {
-      return "Only STRK is supported for EndurFi staking";
+
+export const DepositFunctionEndufi = async (amount:string,accountAddress:string)=>{
+    try{
+    let contractAddress=ENDUFICONTRACT;
+   const strkTokenAddress="0x04718f5a0Fc34cC1AF16A1cdee98fFB20C31f5cD61D6Ab07201858f4287c938D";
+    if(contractAddress===""){
+        return "We currently dont support this token"
     }
-
-    const contractAddress = ENDURFI_CONTRACT.strk;
-    if (!contractAddress) {
-      return "Contract address not found";
-    }
-
-    if (!process.env.PRIVATE_KEY || !process.env.WALLET_ADDRESS) {
-      return "Missing WALLET_ADDRESS or PRIVATE_KEY in .env";
-    }
-
-    // Convert amount to u256 (assuming 18 decimals for STRK)
-    const uintAmount = uint256.bnToUint256((Number(amount) * 10 ** 18).toString());
-
-    const account = new Account(provider, accountAddress, process.env.PRIVATE_KEY);
-    const contract = new Contract(ENDURFI_ABI, contractAddress, provider);
-    contract.connect(account);
-
-    // Check underlying asset
-    const asset = await contract.call("asset", []);
-    console.log("Underlying asset:", asset);
-
+    const uintAmount = uint256.bnToUint256((Number(amount)*(10**18)).toString());
+    const account = new Account(provider, accountAddress, `${process.env.PRIVATE_KEY}`);
+    console.log(uintAmount)
     const tx = await account.execute([
-      {
-        contractAddress: contractAddress,
-        entrypoint: "deposit",
-        calldata: [uintAmount.low.toString(), uintAmount.high.toString(), accountAddress],
-      },
-    ]);
-
-    console.log("Deposit Transaction Hash:", tx.transaction_hash);
-    return {
-      status: "success",
-      transaction_hash: tx.transaction_hash,
-    };
-  } catch (err) {
-    console.error("Deposit error:", err);
-    return {
-      status: "error",
-      message: err instanceof Error ? err.message : "Unknown error",
-    };
-  }
-};
-
-export const WithdrawFunction = async (tokenName: string, amount: string, accountAddress: string) => {
-  try {
-    if (!tokenName.toLowerCase().includes("strk")) {
-      return "Only STRK is supported for EndurFi staking";
+        {
+          contractAddress: contractAddress,
+          entrypoint: "deposit",
+          calldata: [
+            uintAmount,
+            accountAddress
+          ]
+        }
+      ]);
+      console.log("Transaction Hash:", tx.transaction_hash);
+  
+    }catch(err){
+        console.log("The error is",err)
     }
+}
 
-    const contractAddress = ENDURFI_CONTRACT.strk;
-    if (!contractAddress) {
-      return "Contract address not found";
+
+export const WithDrawFunctionEndufi = async (tokenName:string, amount:string,accountAddress:string)=>{
+    try{
+        let contractAddress=ENDUFICONTRACT;
+        const contract=new Contract(depositWithdrawABI,contractAddress,provider);
+        const account = new Account(provider, accountAddress, `${process.env.PRIVATE_KEY}`);
+        contract.connect(account);
+        const maxWithdraw= await contract.call(
+            "max_withdraw",
+            [
+                accountAddress
+            ]
+        );
+        console.log("The maximum withdraw is",maxWithdraw.toString());
+        const withdrawAmount = BigInt(Number(amount) * 10 ** 18);
+        const finalAmount = Number(withdrawAmount) > Number(maxWithdraw) ? maxWithdraw : withdrawAmount;
+        const uintAmount = uint256.bnToUint256(finalAmount.toString());
+        console.log("the withdraw amount is",withdrawAmount)
+        const tx = await account.execute([
+            {
+              contractAddress: contractAddress,
+              entrypoint: "withdraw",
+              calldata: [
+                uintAmount,
+                accountAddress,
+                accountAddress
+              ]
+            }
+          ]);
+        console.log("Executed withdraw successfully Transaction Hash:", tx.transaction_hash);
+    }catch(err){
+        console.log("The error is",err)
     }
-
-    if (!process.env.PRIVATE_KEY || !process.env.WALLET_ADDRESS) {
-      return "Missing WALLET_ADDRESS or PRIVATE_KEY in .env";
-    }
-
-    // Convert amount to u256
-    const uintAmount = uint256.bnToUint256((Number(amount) * 10 ** 18).toString());
-
-    const account = new Account(provider, accountAddress, process.env.PRIVATE_KEY);
-    const contract = new Contract(ENDURFI_ABI, contractAddress, provider);
-    contract.connect(account);
-
-    const tx = await account.execute([
-      {
-        contractAddress: contractAddress,
-        entrypoint: "withdraw",
-        calldata: [uintAmount.low.toString(), uintAmount.high.toString(), accountAddress, accountAddress],
-      },
-    ]);
-
-    console.log("Withdraw Transaction Hash:", tx.transaction_hash);
-    return {
-      status: "success",
-      transaction_hash: tx.transaction_hash,
-    };
-  } catch (err) {
-    console.error("Withdraw error:", err);
-    return {
-      status: "error",
-      message: err instanceof Error ? err.message : "Unknown error",
-    };
-  }
-};
-
-export const EstimateShares = async (amount: string) => {
-  try {
-    const contractAddress = ENDURFI_CONTRACT.strk;
-    const contract = new Contract(ENDURFI_ABI, contractAddress, provider);
-
-    // Convert amount to u256
-    const uintAmount = uint256.bnToUint256((Number(amount) * 10 ** 18).toString());
-
-    const result = await contract.call("convert_to_shares", [uintAmount.low.toString(), uintAmount.high.toString()]);
-
-    // Debug: Log result to check structure
-    console.log("convert_to_shares result:", result);
-
-    let resultUint256: Uint256;
-
-    // Handle different result formats
-    if (typeof result === "string") {
-      resultUint256 = uint256.bnToUint256(result);
-    } else if (Array.isArray(result)) {
-      resultUint256 = {
-        low: (result[0] || "0").toString(),
-        high: (result[1] || "0").toString(),
-      };
-    } else if (result && typeof result === "object" && "low" in result && "high" in result) {
-      resultUint256 = {
-        low: (result.low || "0").toString(),
-        high: (result.high || "0").toString(),
-      };
-    } else {
-      throw new Error("Unexpected result format from convert_to_shares");
-    }
-
-    const shares = uint256.uint256ToBN(resultUint256).toString();
-
-    console.log(`Estimated xSTRK shares for ${amount} STRK:`, shares);
-    return {
-      status: "success",
-      estimated_shares: shares,
-    };
-  } catch (err) {
-    console.error("Estimate shares error:", err);
-    return {
-      status: "error",
-      message: err instanceof Error ? err.message : "Unknown error",
-    };
-  }
-};
-
-export const CheckPool = async () => {
-  try {
-    const contractAddress = ENDURFI_CONTRACT.strk;
-    const contract = new Contract(ENDURFI_ABI, contractAddress, provider);
-
-    const result = await contract.call("total_assets", []);
-
-    // Debug: Log result to check structure
-    console.log("total_assets result:", result);
-
-    let resultUint256: Uint256;
-
-    // Handle different result formats
-    if (typeof result === "string") {
-      resultUint256 = uint256.bnToUint256(result);
-    } else if (Array.isArray(result)) {
-      resultUint256 = {
-        low: (result[0] || "0").toString(),
-        high: (result[1] || "0").toString(),
-      };
-    } else if (result && typeof result === "object" && "low" in result && "high" in result) {
-      resultUint256 = {
-        low: (result.low || "0").toString(),
-        high: (result.high || "0").toString(),
-      };
-    } else {
-      throw new Error("Unexpected result format from total_assets");
-    }
-
-    const totalAssets = uint256.uint256ToBN(resultUint256).toString();
-
-    console.log("Total STRK in pool:", totalAssets);
-    return {
-      status: "success",
-      total_assets: totalAssets,
-    };
-  } catch (err) {
-    console.error("Check pool error:", err);
-    return {
-      status: "error",
-      message: err instanceof Error ? err.message : "Unknown error",
-    };
-  }
-};
+}

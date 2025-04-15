@@ -1,10 +1,10 @@
-import { ChatAnthropic } from "@langchain/anthropic";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import dotenv from "dotenv";
-import { starknetTokenAnalyzerTools } from "../tools/starknetTokenAnalyzerTools";
-
+import { EnduFiDepositTool,EnduFiWithdrawTool,StrkFarmDepositTool,StrkFarmWithdrawTool } from "../tools/DepositWithdrawtool";
+import { DEPOSIT_WITHDRAW_SYSTEM_PROMPT } from "./depositAgentPrompt";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 dotenv.config();
 
 interface ChatResponse {
@@ -14,21 +14,19 @@ interface ChatResponse {
 }
 
 const tools = [
-    ...starknetTokenAnalyzerTools,
+    EnduFiDepositTool,
+    EnduFiWithdrawTool,
+    StrkFarmDepositTool,
+    StrkFarmWithdrawTool
 ];
 
-const llm = new ChatAnthropic({
-    clientOptions: {
-        defaultHeaders: {
-            "X-Api-Key": process.env.ANTHROPIC_API_KEY,
-        },
-    },
-    modelName: "claude-3-5-sonnet-latest",
-    temperature: 0.5,
-    streaming: false,
-});
+export const llm=new ChatGoogleGenerativeAI({
+    model:"gemini-2.0-flash",
+    apiKey:`${process.env.GEMINI_API_KEY}`,
+    maxRetries:2
+  })
 
-export async function chatFunction(
+export async function DepositWithdrawAgentFunction(
     messages: { role: string; content: string }[],
     address: string,
     existingMemory?: {
@@ -40,7 +38,7 @@ export async function chatFunction(
     }
 ): Promise<ChatResponse> {
     const memory = new MemorySaver();
-
+    const systemMessage = DEPOSIT_WITHDRAW_SYSTEM_PROMPT.replace("{{address}}", address);
     const formattedMessages = messages.map(msg =>
         msg.role === "assistant"
             ? new AIMessage(msg.content)
@@ -55,6 +53,7 @@ export async function chatFunction(
     const app = createReactAgent({
         llm,
         tools,
+        messageModifier: systemMessage,
         checkpointSaver: memory,
     });
 
@@ -62,7 +61,7 @@ export async function chatFunction(
         configurable: {
             thread_id: "chat-thread",
         },
-        recursionLimit: 10,
+        recursionLimit: 5,
     };
 
     const response: ChatResponse = {

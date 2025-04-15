@@ -140,3 +140,16 @@ export const WalletBalancesSchema = z.object({
 		.optional()
 		.describe("Optional array of specific token contract addresses to check")
 }); 
+
+
+
+export interface DepositWithdrawPool{
+	tokenName:string;
+	protocol:string;
+	contractAddress:string;
+	feature1:string;
+	feature2:string;
+	tokenImage:string;
+	protocolImage:string;
+	poolName:string;
+}

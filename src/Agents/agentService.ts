@@ -5,12 +5,10 @@ import { starknetTools } from "../tools/starknetTools";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import dotenv from "dotenv";
 import { SYSTEM_PROMPT } from "./systemPrompt";
-import { DepositFunction, WithdrawFunction, EstimateShares, CheckPool  } from "../Functions/EnduFi";
 import { createStarkNetAnalyzerTool } from "../tools/analyze_starknet_sentiment";
 import { StarkNetLLMAnalyzer } from "../tools/llmanalyser";
 import { starknetTransactionTools } from "../tools/starknetTransactionTools";
-import { swapTokenTools } from "../tools/SwapTokenTool";
-import { cacheChatTool } from "../tools/memoryTool";
+import { swapTokenTools } from "../tools/SwapTokenTool";;
 
 const starknetAnalyzer = new StarkNetLLMAnalyzer(
 	process.env.OPENROUTER_API_KEY || process.env.ANTHROPIC_API_KEY || ""
