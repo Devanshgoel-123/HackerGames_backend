@@ -9,7 +9,7 @@ import { createStarkNetAnalyzerTool } from "../tools/analyze_starknet_sentiment"
 import { StarkNetLLMAnalyzer } from "../tools/llmanalyser";
 import { starknetTransactionTools } from "../tools/starknetTransactionTools";
 import { swapTokenTools } from "../tools/SwapTokenTool";;
-
+import { SwapUsingNameTool} from "../tools/SwapUsingNameTool";
 const starknetAnalyzer = new StarkNetLLMAnalyzer(
 	process.env.OPENROUTER_API_KEY || process.env.ANTHROPIC_API_KEY || ""
 );
@@ -26,12 +26,11 @@ interface ChatResponse {
 }
 
 const tools = [
-	// ...defiLlamaTools,
-	//...defiTransactionsTools,
-	 ...starknetTools,
+	  ...starknetTools,
 	 ...swapTokenTools,
-	analyze_sentiment_analyzer,
-	...starknetTransactionTools
+	 analyze_sentiment_analyzer,
+	 ...starknetTransactionTools,
+	SwapUsingNameTool
 ];
 
 const llm = new ChatAnthropic({

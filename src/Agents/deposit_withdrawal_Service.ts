@@ -4,7 +4,7 @@ import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import dotenv from "dotenv";
 import { EnduFiDepositTool,EnduFiWithdrawTool,StrkFarmDepositTool,StrkFarmWithdrawTool } from "../tools/DepositWithdrawtool";
 import { DEPOSIT_WITHDRAW_SYSTEM_PROMPT } from "./depositAgentPrompt";
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { ChatAnthropic } from "@langchain/anthropic";
 dotenv.config();
 
 interface ChatResponse {
@@ -17,14 +17,20 @@ const tools = [
     EnduFiDepositTool,
     EnduFiWithdrawTool,
     StrkFarmDepositTool,
-    StrkFarmWithdrawTool
+    StrkFarmWithdrawTool,
 ];
 
-export const llm=new ChatGoogleGenerativeAI({
-    model:"gemini-2.0-flash",
-    apiKey:`${process.env.GEMINI_API_KEY}`,
-    maxRetries:2
-  })
+
+const llm = new ChatAnthropic({
+	clientOptions: {
+		defaultHeaders: {
+			"X-Api-Key": process.env.ANTHROPIC_API_KEY,
+		},
+	},
+	modelName: "claude-3-5-sonnet-latest",
+	temperature: 0.5,
+	streaming: false,
+});
 
 export async function DepositWithdrawAgentFunction(
     messages: { role: string; content: string }[],

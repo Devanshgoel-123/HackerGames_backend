@@ -1,4 +1,11 @@
 import { prisma } from "../db";
+import { fetchUserPortfolio } from "./Portfolio";
+import { fetchTokenPrices, getTokenPrice, provider } from "../utils/defiUtils";
+import { Account } from "starknet";
+import { ACCOUNT_ADDRESS } from "../constants/contracts";
+import { FetchVolatileTokens } from "./FetchVolatileTokens";
+import { DepositFunctionEndufi } from "./EnduFi";
+
 interface TradeInput {
     agentWallet: string;
     amount: number; 
@@ -37,8 +44,6 @@ export const saveTransactionByAgent= async (input:TradeInput)=>{
 }
 
 
-
-
 export const MakeDepositToAgent=async (input:Deposit)=>{
     try{
         const {
@@ -51,22 +56,25 @@ export const MakeDepositToAgent=async (input:Deposit)=>{
         }=input;
         let user = await prisma.user.findFirst({
             where: {
-                walletAddress: userWallet
+                walletAddress: userWallet.toLowerCase()
             }
         });
+        const STARK_TOKEN_ADDRESS="0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d"
+        const tokenPrice=await getTokenPrice(STARK_TOKEN_ADDRESS)
+        console.log('the user is',user?.id)
         if (user === null) {
             user = await prisma.user.create({
                 data: {
-                    walletAddress: userWallet,
+                    walletAddress: userWallet.toLowerCase(),
                 }
             });
         }
-        
+        const amountInUsd=tokenPrice*Number(amount);
         const result=await prisma.deposit.create({
             data:{
                 agentWallet,
                 userWallet,
-                amount,
+                amount:amountInUsd,
                 stopLoss,
                 expectedProfit,
                 deadline
@@ -107,5 +115,18 @@ export const fetchTransactionByAgent=async (agentWalletAddress:string)=>{
         return {
             message:"Error Fetching any transactions by the agent"
         }
+    }
+}
+
+
+export const maximiseProfit=async ()=>{
+    try{
+    const account = new Account(provider, ACCOUNT_ADDRESS, `${process.env.PRIVATE_KEY}`);
+     const portfolio=await fetchUserPortfolio(ACCOUNT_ADDRESS);
+     console.log(portfolio.total_value_usd,portfolio.tokens);
+     const volatileAssets=await FetchVolatileTokens();
+      console.log(volatileAssets)
+    }catch(err){
+        console.log(err,"Error maximising the portoflio")
     }
 }

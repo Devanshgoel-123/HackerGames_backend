@@ -2,6 +2,7 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { DepositFunctionStrkFarm, WithDrawFunctionStrkFarm } from "../Functions/StrkFarm";
 import { DepositFunctionEndufi } from "../Functions/EnduFi";
+import { DEPOSIT_WITHDRAW } from "../Routes/DepositWithdraw";
 
 export const StrkFarmDepositTool=tool(
     async({
@@ -92,3 +93,15 @@ export const EnduFiWithdrawTool=tool(
 )
 
 
+export const GetPoolDetailsTool=tool(
+    async()=>{
+       return {
+         result:DEPOSIT_WITHDRAW
+       }
+    },
+    {
+        name: "get_pool_details",
+        description: "Answers user's queries based on the pool details available",
+       
+    }
+)

@@ -17,6 +17,7 @@ import { AutonomousRouter } from "./Routes/Autonomous";
 import { DepositWithdrawRouter } from "./Routes/DepositWithdraw";
 import { WithDrawFunctionEndufi } from "./Functions/EnduFi";
 import { DepositFunctionStrkFarm } from "./Functions/StrkFarm";
+import { maximiseProfit } from "./Functions/MaximisingStrategy";
 dotenv.config()
 const app: Express = express();
 app.use(cors());
@@ -53,6 +54,21 @@ const rebalancerJob=new CronJob(
      },
 	  true,
 	'Asia/Kolkata'
+)
+
+const MaximiseProfitJob=new CronJob(
+  '0 0 */6 * * *',
+  async function(){
+   console.log("🔄 Running maximising profit job...");
+  const result=await maximiseProfit();
+  console.log("✅ Running maximising profit job completed.");  
+   return result;
+  },
+  ()=>{
+   console.log("Ran the rebalance function")
+  },
+ true,
+'Asia/Kolkata'
 )
 
 
@@ -107,6 +123,15 @@ app.post("/agent", async (req:Request, res:Response):Promise<any> =>{
             message:"Couldnt initialise the agent"
         })
     }
+})
+
+app.get("/beststrategy", async (req:Request, res:Response):Promise<any> =>{
+  try{
+    const result=await maximiseProfit();
+    return res.send(result);
+  }catch(err){
+    console.log(err,"The error is");
+  }
 })
 
 app.get("/volatile", async (req: Request, res: Response) => {

@@ -9,16 +9,15 @@ export const AutonomousRouter:Router=express.Router();
 
 AutonomousRouter.post("/createDeposit",async (req:Request, res:Response):Promise<any>=>{
     try{
-     const { agentWallet, userWallet, amount, stopLoss, expectedProfit} = req.body;
-     const deadline = new Date();
-    deadline.setDate(deadline.getDate() + 7)
+     const { agentWallet, userWallet, amount, stopLoss, expectedProfit, deadline} = req.body;
+    const depositDeadline=new Date(deadline)
      const {message, success,data} = await MakeDepositToAgent({
         agentWallet: agentWallet,
         userWallet : userWallet,
         amount : amount,
         stopLoss : stopLoss,
         expectedProfit,
-        deadline
+        deadline:depositDeadline
      });
     return res.status(200).send({
             message:message,

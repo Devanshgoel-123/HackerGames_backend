@@ -65,3 +65,13 @@ UserContactRouter.get("/contacts",async (req:Request, res:Response):Promise<any>
         })
     }
 })
+
+
+UserContactRouter.get("/getAgentWallet",async (req:Request, res:Response):Promise<any>=>{
+    try{
+
+    }catch(err){
+        
+    }
+})
+

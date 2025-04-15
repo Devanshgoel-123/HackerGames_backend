@@ -152,4 +152,5 @@ export interface DepositWithdrawPool{
 	tokenImage:string;
 	protocolImage:string;
 	poolName:string;
+	apy:string;
 }
