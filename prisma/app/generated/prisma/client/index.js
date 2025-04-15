@@ -199,6 +199,10 @@ const config = {
         "fromEnvVar": null,
         "value": "darwin-arm64",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "debian-openssl-3.0.x"
       }
     ],
     "previewFeatures": [],
@@ -225,8 +229,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"app/generated/prisma/client\"\n}\n\ndatasource db {\n  provider  = \"postgresql\"\n  url       = env(\"DATABASE_URL\")\n  directUrl = env(\"DIRECT_URL\")\n}\n\nmodel UserPortfolioPreference {\n  id               Int    @id @default(autoincrement())\n  walletAddress    String @unique\n  StablePercentage Int\n  NativePercentage Int\n  OtherPercentage  Int\n}\n\nmodel User {\n  id            Int           @id @default(autoincrement())\n  walletAddress String        @unique\n  contacts      UserContact[]\n  deposits      Deposit[]     @relation(\"UserDeposits\")\n}\n\nmodel UserContact {\n  id      Int    @id @default(autoincrement())\n  user    User   @relation(fields: [userId], references: [id])\n  userId  Int\n  name    String\n  address String\n}\n\nmodel Token {\n  id            Int    @id @default(autoincrement())\n  name          String @default(\"usdc\")\n  token_id      Int    @unique\n  token_address String\n  chain_id      Int\n  decimals      Int\n  type          String\n  image         String @default(\"default.png\")\n}\n\nmodel Agent {\n  wallet      String    @id // Unique wallet address\n  name        String\n  description String?\n  createdAt   DateTime  @default(now())\n  deposits    Deposit[] @relation(\"AgentDeposits\")\n  trades      Trade[]\n}\n\nmodel Deposit {\n  id             String   @id @default(uuid())\n  user           User     @relation(\"UserDeposits\", fields: [userWallet], references: [walletAddress])\n  userWallet     String\n  agent          Agent    @relation(\"AgentDeposits\", fields: [agentWallet], references: [wallet])\n  agentWallet    String\n  amount         Decimal\n  stopLoss       Decimal\n  expectedProfit Decimal\n  deadline       DateTime\n  createdAt      DateTime @default(now())\n}\n\nmodel Trade {\n  id          String   @id @default(uuid())\n  agent       Agent    @relation(fields: [agentWallet], references: [wallet])\n  agentWallet String\n  fromAsset   String\n  amount      Decimal\n  toAsset     String\n  txHash      String?\n  executedAt  DateTime @default(now())\n}\n\nenum TradeType {\n  BUY\n  SELL\n}\n",
-  "inlineSchemaHash": "115f4dbfac97ac3640d42cb95c3505ede54da170452807da64c061845aa1bbfa",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider      = \"prisma-client-js\"\n  output        = \"app/generated/prisma/client\"\n  binaryTargets = [\"native\", \"debian-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider  = \"postgresql\"\n  url       = env(\"DATABASE_URL\")\n  directUrl = env(\"DIRECT_URL\")\n}\n\nmodel UserPortfolioPreference {\n  id               Int    @id @default(autoincrement())\n  walletAddress    String @unique\n  StablePercentage Int\n  NativePercentage Int\n  OtherPercentage  Int\n}\n\nmodel User {\n  id            Int           @id @default(autoincrement())\n  walletAddress String        @unique\n  contacts      UserContact[]\n  deposits      Deposit[]     @relation(\"UserDeposits\")\n}\n\nmodel UserContact {\n  id      Int    @id @default(autoincrement())\n  user    User   @relation(fields: [userId], references: [id])\n  userId  Int\n  name    String\n  address String\n}\n\nmodel Token {\n  id            Int    @id @default(autoincrement())\n  name          String @default(\"usdc\")\n  token_id      Int    @unique\n  token_address String\n  chain_id      Int\n  decimals      Int\n  type          String\n  image         String @default(\"default.png\")\n}\n\nmodel Agent {\n  wallet      String    @id // Unique wallet address\n  name        String\n  description String?\n  createdAt   DateTime  @default(now())\n  deposits    Deposit[] @relation(\"AgentDeposits\")\n  trades      Trade[]\n}\n\nmodel Deposit {\n  id             String   @id @default(uuid())\n  user           User     @relation(\"UserDeposits\", fields: [userWallet], references: [walletAddress])\n  userWallet     String\n  agent          Agent    @relation(\"AgentDeposits\", fields: [agentWallet], references: [wallet])\n  agentWallet    String\n  amount         Decimal\n  stopLoss       Decimal\n  expectedProfit Decimal\n  deadline       DateTime\n  createdAt      DateTime @default(now())\n}\n\nmodel Trade {\n  id          String   @id @default(uuid())\n  agent       Agent    @relation(fields: [agentWallet], references: [wallet])\n  agentWallet String\n  fromAsset   String\n  amount      Decimal\n  toAsset     String\n  txHash      String?\n  executedAt  DateTime @default(now())\n}\n\nenum TradeType {\n  BUY\n  SELL\n}\n",
+  "inlineSchemaHash": "8a7353ff7e91f74d1a037846136e2fa77f620356e94c11aa00e462cf6729b96c",
   "copyEngine": true
 }
 
@@ -267,6 +271,10 @@ Object.assign(exports, Prisma)
 // file annotations for bundling tools to include these files
 path.join(__dirname, "libquery_engine-darwin-arm64.dylib.node");
 path.join(process.cwd(), "prisma/app/generated/prisma/client/libquery_engine-darwin-arm64.dylib.node")
+
+// file annotations for bundling tools to include these files
+path.join(__dirname, "libquery_engine-debian-openssl-3.0.x.so.node");
+path.join(process.cwd(), "prisma/app/generated/prisma/client/libquery_engine-debian-openssl-3.0.x.so.node")
 // file annotations for bundling tools to include these files
 path.join(__dirname, "schema.prisma");
 path.join(process.cwd(), "prisma/app/generated/prisma/client/schema.prisma")
