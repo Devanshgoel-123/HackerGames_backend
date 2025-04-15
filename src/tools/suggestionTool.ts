@@ -25,9 +25,9 @@ async function generateSuggestions(aiMessage: string, maxSuggestions: number): P
 				{
 					role: "system",
 					content: `You are a helpful assistant that generates user response suggestions.
-Generate ${maxSuggestions} potential user responses based on the AI's last message.
-Each response should be either a question, response, or clarification.
-Responses should be natural and contextual.`
+					Generate ${maxSuggestions} potential user responses based on the AI's last message.
+					Each response should be either a question, response, or clarification.
+					Responses should be natural and contextual.`
 				},
 				{
 					role: "user",

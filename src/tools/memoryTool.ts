@@ -1,82 +1,133 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
+import { ChatAnthropic } from "@langchain/anthropic";
+import dotenv from "dotenv";
 
-// Define the structure for user memory
-interface UserMemory {
-	preferences: Record<string, any>;
-	importantInfo: Record<string, any>;
-	lastUpdated: string;
+// Load environment variables
+dotenv.config();
+
+// Simple in-memory chat history store
+interface ChatEntry {
+  userId: string;
+  query: string;
+  response: string;
+  timestamp: number;
 }
 
-// Store user memory with userId as key
-const userMemoryStore: Map<string, UserMemory> = new Map();
+const chatHistory: ChatEntry[] = [];
 
-const memoryToolSchema = z.object({
-	userId: z.string().describe("User's wallet address"),
-	action: z.enum(["save", "retrieve"]).describe("Whether to save or retrieve memory"),
-	key: z.string().describe("The key for the specific information to save/retrieve"),
-	value: z.any().optional().describe("The value to save (only needed for save action)"),
-	existingMemory: z.record(z.any()).optional().describe("Existing memory from local storage"),
-});
+// Simple string similarity (keyword overlap)
+function calculateSimilarity(query1: string, query2: string): number {
+  const words1 = query1.toLowerCase().split(/\s+/).filter(Boolean);
+  const words2 = query2.toLowerCase().split(/\s+/).filter(Boolean);
+  const intersection = words1.filter((word) => words2.includes(word));
+  const union = new Set([...words1, ...words2]).size;
+  return intersection.length / union;
+}
 
-export const memoryTool = tool(
-	async ({ userId, action, key, value, existingMemory }) => {
-		try {
-			// Initialize or update memory from existing storage
-			if (existingMemory && !userMemoryStore.has(userId)) {
-				userMemoryStore.set(userId, {
-					preferences: existingMemory.preferences || {},
-					importantInfo: existingMemory.importantInfo || {},
-					lastUpdated: existingMemory.lastUpdated || new Date().toISOString()
-				});
-			}
+// LangChain chat tool
+export const cacheChatTool = tool(
+  async ({ userId, query }) => {
+    try {
+      console.log(`[TOOL] cache_chat called for user ${userId}: "${query}"`);
 
-			// Get or initialize user memory
-			let userMemory = userMemoryStore.get(userId) || {
-				preferences: {},
-				importantInfo: {},
-				lastUpdated: new Date().toISOString()
-			};
+      // Check chat history for similar queries
+      const similarEntry = chatHistory.find(
+        (entry) =>
+          entry.userId === userId && calculateSimilarity(entry.query, query) >= 0.8
+      );
 
-			if (action === "save") {
-				// Determine if the key belongs to preferences or important info
-				const category = key.startsWith("pref_") ? "preferences" : "importantInfo";
-				const cleanKey = key.replace(/^(pref_|info_)/, "");
+      if (similarEntry) {
+        console.log(`Cache hit for user ${userId}: "${query}"`);
+        return JSON.stringify(
+          {
+            type: "chat_response",
+            status: "EXECUTED",
+            source: "cache",
+            response: similarEntry.response,
+            timestamp: new Date().toISOString(),
+            details: {
+              action: "cache_chat",
+              message: "Response retrieved from cache",
+            },
+          },
+          null,
+          2
+        );
+      }
 
-				userMemory[category][cleanKey] = value;
-				userMemory.lastUpdated = new Date().toISOString();
-				userMemoryStore.set(userId, userMemory);
+      // No cache hit, call Anthropic API
+      const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
+      if (!anthropicApiKey) {
+        throw new Error("ANTHROPIC_API_KEY not set in .env");
+      }
 
-				return JSON.stringify({
-					type: "memory_update",
-					status: "success",
-					memory: userMemory,
-					message: `Successfully saved ${cleanKey} to ${category}`
-				});
-			} else {
-				// Retrieve all memory for the user
-				return JSON.stringify({
-					type: "memory_retrieve",
-					status: "success",
-					memory: userMemory || null,
-					message: userMemory ? "Memory retrieved successfully" : "No memory found for user"
-				});
-			}
+      const llm = new ChatAnthropic({
+        model: "claude-3-opus-20240229",
+        apiKey: anthropicApiKey,
+      });
 
-		} catch (error: any) {
-			console.error("Error in memoryTool:", error);
-			return JSON.stringify({
-				type: "error",
-				message: error.message,
-				memory: null
-			});
-		}
-	},
-	{
-		name: "MemoryTool",
-		description: "Save or retrieve user-specific information between sessions",
-		schema: memoryToolSchema,
-	}
+      const response = await llm.invoke([
+        {
+          role: "user",
+          content: query,
+        },
+      ]);
+
+      const responseText = response.content as string;
+
+      // Save to chat history
+      chatHistory.push({
+        userId,
+        query,
+        response: responseText,
+        timestamp: Date.now(),
+      });
+
+      // Keep history manageable (last 100 entries)
+      if (chatHistory.length > 100) {
+        chatHistory.shift();
+      }
+
+      console.log(`API call for user ${userId}: "${query}"`);
+      return JSON.stringify(
+        {
+          type: "chat_response",
+          status: "EXECUTED",
+          source: "api",
+          response: responseText,
+          timestamp: new Date().toISOString(),
+          details: {
+            action: "cache_chat",
+            message: "Response fetched from Anthropic API",
+          },
+        },
+        null,
+        2
+      );
+    } catch (error) {
+      console.error(
+        `[TOOL ERROR] cache_chat failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+      throw new Error(
+        `Failed to process chat: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  },
+  {
+    name: "cache_chat",
+    description:
+      "Checks user chat history for similar queries and returns cached response if found, otherwise calls Anthropic API.",
+    schema: z.object({
+      userId: z.string().describe("Unique identifier for the user"),
+      query: z.string().describe("The user's query"),
+    }),
+  }
 );
 
-export const memoryTools = [memoryTool];
+// Export tools as array (like swapTokenTools)
+export const chatTools = [cacheChatTool];
