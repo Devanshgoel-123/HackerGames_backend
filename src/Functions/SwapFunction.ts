@@ -4,12 +4,15 @@ import { executeSwap } from "@avnu/avnu-sdk";
 import { Account } from "starknet";
 import { provider } from "../utils/defiUtils";
 import { constants } from "starknet";
+import dotenv from "dotenv"
+dotenv.config()
 
 
 export const SingularSwapExecution=async (swap:SwapAction,userAddress:string)=>{
     try{
         console.log("calling the singular swap tool")
-        const formattedAmount ='0x'+BigInt(swap.amount).toString(16);
+        const formattedAmount ='0x'+BigInt(Math.floor(swap.amount*(10**swap.fromTokenDecimals))).toString(16);
+        console.log("The formatted amount is",formattedAmount)
         const account = new Account(
             provider,
             userAddress,
@@ -17,7 +20,7 @@ export const SingularSwapExecution=async (swap:SwapAction,userAddress:string)=>{
             undefined,
             constants.TRANSACTION_VERSION.V3
           );
-          console.log("The formatted amount is ",formattedAmount)
+        console.log("The formatted amount is ",formattedAmount)
         const quoteRes = await axios.get('https://starknet.api.avnu.fi/swap/v2/quotes', {
             params: {
               sellTokenAddress: swap.from_token_address,
@@ -41,6 +44,6 @@ export const SingularSwapExecution=async (swap:SwapAction,userAddress:string)=>{
             console.log("Error while sending the transactions",err);
            }
     }catch(err){
-
+      console.log("err in singular swap functions",err)
     }
 }

@@ -45,7 +45,6 @@ DepositWithdrawRouter.post("/deposit",async(req:Request,res:Response):Promise<an
 DepositWithdrawRouter.post("/agent",async(req:Request,res:Response):Promise<any>=>{
     try{
 		const result=await DepositWithdrawAgentFunction(req.body.messages, req.body.address);
-        console.log(result,"The result of the agent is")
         return res.send({
             message:result
         })

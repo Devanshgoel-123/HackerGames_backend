@@ -296,18 +296,18 @@ interface Token {
       try {
         let result;
         
-        // if (targetPool.protocol === "StrkFarm") {
-        //   result = await DepositFunctionStrkFarm(
-        //     token.name,
-        //     amount,
-        //     userAddress
-        //   );
-        // } else if (targetPool.protocol === "EndurFi") {
-        //   result = await DepositFunctionEndufi(
-        //     amount,
-        //     userAddress
-        //   );
-        // }
+        if (targetPool.protocol === "StrkFarm") {
+          result = await DepositFunctionStrkFarm(
+            token.name,
+            amount,
+            userAddress
+          );
+        } else if (targetPool.protocol === "EndurFi") {
+          result = await DepositFunctionEndufi(
+            amount,
+            userAddress
+          );
+        }
         
         results.push({
           token: token.name,

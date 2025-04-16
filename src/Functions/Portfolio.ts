@@ -271,7 +271,6 @@ export const RebalancerReusableFunction = async (
         targetAllocation
       );
 
-      console.log(requiredSwaps)
       if (requiredSwaps.length === 0) {
 
         await saveUserPreference(accountAddress, targetAllocation);
@@ -284,8 +283,10 @@ export const RebalancerReusableFunction = async (
           userPortfolio
         };
       }
-      //await executeSwapFunction(requiredSwaps,accountAddress)
+      
+      await executeSwapFunction(requiredSwaps,accountAddress);
       await saveUserPreference(accountAddress, targetAllocation);
+     
       return {
         success: true,
         message: `Swapped the required assets on your behalf, swap successful.`,
@@ -323,7 +324,6 @@ export const executeSwapFunction=async (swaps:SwapAction[],userAddress:string)=>
       const swapSendingHash=await SingularSwapExecution(swap,account.address)
       console.log(`✅ Swap successful! Tx hash: ${swapSendingHash} ${swap.from_token_address} ${swap.to_token_address}`);
       txHashes.push(swapSendingHash as string);
-      return swapSendingHash
   }
   return txHashes;
  

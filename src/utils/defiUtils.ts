@@ -198,13 +198,17 @@ export async function fetchTokenBalance(
 	tokenPrices: Map<string, number>,
 ): Promise<TokenForPortfolio> {
 	try {
-		// console.log("the data is",walletAddress,token)
+		console.log("the data is",walletAddress,token)
 		const get_abi = provider.getClassAt(token.address);
 		const contract = new Contract((await get_abi).abi, token.address, provider);
-		const balance = await contract.call("balanceOf", [walletAddress]);
+		const balance = await contract.call(
+			"balanceOf",
+			 [
+				walletAddress
+			])
 		const tokenPrice = tokenPrices.get(token.address);
 		console.log(balance,token.decimals)
-		if (!balance) {
+		if (!balance.toString()) {
 			return {
 				address: token.address,
 				name: token.name,

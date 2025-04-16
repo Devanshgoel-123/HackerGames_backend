@@ -18,7 +18,7 @@ UserPortfolioRouter.get("/",async (req:Request,res:Response):Promise<any>=>{
             data:"Please connect your wallet"
         })
         const userPortfolio=await fetchUserPortfolio(agentWalletAddress.toString())
-        console.log("the user portfolio is",userPortfolio);
+
 	    return res.json({
         userPortfolio,
 	  });
@@ -52,7 +52,6 @@ UserPortfolioRouter.get("/agentTotal",async (req:Request,res:Response):Promise<a
           });
         const userPortfolio=await fetchUserPortfolio(agentWalletAddress.toString())
         const totalHoldings=userPortfolio.total_value_usd
-        console.log("the user portfolio is",userPortfolio);
 	    return res.json({
             totalAmount:totalAmount,
             stopLoss:stopLoss,

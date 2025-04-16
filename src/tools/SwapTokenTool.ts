@@ -26,7 +26,7 @@ export const executeSwapTool = tool(
             const swap:SwapAction={
                 from_token_address : fromTokenAddress?.token_address as string,
                 to_token_address : toTokenAddress?.token_address as string,
-                amount:Number(amount)*(10**fromTokenAddress.decimals),
+                amount:Number(amount),
                 chainId:1,
                 fromTokenDecimals:fromTokenAddress?.decimals || 18
             }

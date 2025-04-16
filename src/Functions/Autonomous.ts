@@ -119,14 +119,3 @@ export const fetchTransactionByAgent=async (agentWalletAddress:string)=>{
 }
 
 
-export const maximiseProfit=async ()=>{
-    try{
-    const account = new Account(provider, ACCOUNT_ADDRESS, `${process.env.PRIVATE_KEY}`);
-     const portfolio=await fetchUserPortfolio(ACCOUNT_ADDRESS);
-     console.log(portfolio.total_value_usd,portfolio.tokens);
-     const volatileAssets=await FetchVolatileTokens();
-      console.log(volatileAssets)
-    }catch(err){
-        console.log(err,"Error maximising the portoflio")
-    }
-}
